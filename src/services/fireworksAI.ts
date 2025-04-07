@@ -106,13 +106,13 @@ Return your analysis in JSON format with the following structure:
     "inflammatoryScore": "Anti-inflammatory", "Neutral", or "Pro-inflammatory"
   },
   "recommendation": "Detailed explanation on why this food is good or bad for PCOS",
-  "alternatives": ["3-5 better alternatives if applicable"]
+  "alternatives": ["3-5 better alternatives if pcosCompatibility is below 80%"]
 }`;
   }
 
   private formatAnalysisResult(rawResult: any): AnalysisResult {
     // Ensure we have all required fields with fallbacks
-    return {
+    const result = {
       foodName: rawResult.foodName || "Unknown Food",
       pcosCompatibility: Number(rawResult.pcosCompatibility) || 50,
       nutritionalInfo: {
@@ -125,5 +125,12 @@ Return your analysis in JSON format with the following structure:
       recommendation: rawResult.recommendation || "No specific recommendations available.",
       alternatives: Array.isArray(rawResult.alternatives) ? rawResult.alternatives : []
     };
+
+    // Only provide alternatives if compatibility is below 80%
+    if (result.pcosCompatibility >= 80) {
+      result.alternatives = [];
+    }
+
+    return result;
   }
 }

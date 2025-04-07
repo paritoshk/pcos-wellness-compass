@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Camera, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { MessageCircle, Camera, ChevronDown, ChevronUp } from "lucide-react";
+import { useUser } from '@/contexts/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for demonstration
 const mockChatHistory = [
@@ -26,33 +28,6 @@ const mockChatHistory = [
       { role: 'user', content: 'What type of exercise is best for PCOS?' },
       { role: 'assistant', content: 'For PCOS, a combination of both cardio and strength training is generally most effective. Strength training helps build muscle, which improves insulin sensitivity, while moderate cardio helps with weight management and stress reduction. Activities like HIIT (High-Intensity Interval Training) can be particularly beneficial as they improve insulin sensitivity. Aim for about 150 minutes of moderate exercise each week, spread across several days.' }
     ]
-  }
-];
-
-const mockFoodAnalyses = [
-  {
-    id: '1',
-    date: '2025-04-06T19:20:00',
-    foodName: 'Greek Salad with Feta',
-    imageUrl: '/placeholder.svg',
-    pcosCompatibility: 85,
-    note: 'Lunch at Mediterranean restaurant'
-  },
-  {
-    id: '2',
-    date: '2025-04-06T08:45:00',
-    foodName: 'Blueberry Oatmeal',
-    imageUrl: '/placeholder.svg',
-    pcosCompatibility: 78,
-    note: 'Breakfast'
-  },
-  {
-    id: '3',
-    date: '2025-04-05T13:10:00',
-    foodName: 'Chicken Caesar Wrap',
-    imageUrl: '/placeholder.svg',
-    pcosCompatibility: 65,
-    note: 'Lunch on the go'
   }
 ];
 
@@ -103,11 +78,22 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ date, children }) => {
 };
 
 const HistoryLog: React.FC = () => {
+  const { foodAnalysisHistory } = useUser();
+  const navigate = useNavigate();
+
+  const handleShareInChat = (analysis: any) => {
+    navigate('/chat', { 
+      state: { 
+        foodAnalysis: analysis
+      }
+    });
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">History Log</h1>
       
-      <Tabs defaultValue="chats" className="w-full">
+      <Tabs defaultValue="analyses" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="chats" className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4" />
@@ -162,7 +148,7 @@ const HistoryLog: React.FC = () => {
                 <p className="text-muted-foreground">No chat history yet</p>
                 <Button 
                   className="mt-4 bg-pcos hover:bg-pcos-dark"
-                  onClick={() => window.location.href = '/chat'}
+                  onClick={() => navigate('/chat')}
                 >
                   Start a Chat
                 </Button>
@@ -172,9 +158,9 @@ const HistoryLog: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="analyses">
-          {mockFoodAnalyses.length > 0 ? (
+          {foodAnalysisHistory.length > 0 ? (
             <div className="space-y-4">
-              {mockFoodAnalyses.map(analysis => (
+              {foodAnalysisHistory.map(analysis => (
                 <HistoryItem key={analysis.id} date={analysis.date}>
                   <div className="flex gap-4">
                     <div className="w-20 h-20 bg-muted rounded-md overflow-hidden flex-shrink-0">
@@ -187,7 +173,6 @@ const HistoryLog: React.FC = () => {
                     
                     <div className="flex-1">
                       <h3 className="font-medium">{analysis.foodName}</h3>
-                      <p className="text-sm text-muted-foreground">{analysis.note}</p>
                       
                       <div className="mt-2 flex items-center">
                         <div className="text-sm mr-2">PCOS Compatibility:</div>
@@ -206,11 +191,20 @@ const HistoryLog: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex justify-end mt-2">
+                      <div className="flex justify-end mt-2 space-x-2">
                         <Button 
                           variant="outline"
                           size="sm"
                           className="border-pcos text-pcos hover:bg-pcos/10"
+                          onClick={() => handleShareInChat(analysis)}
+                        >
+                          Share in Chat
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="border-pcos text-pcos hover:bg-pcos/10"
+                          onClick={() => navigate('/analyze')}
                         >
                           View Details
                         </Button>
@@ -227,7 +221,7 @@ const HistoryLog: React.FC = () => {
                 <p className="text-muted-foreground">No food analyses yet</p>
                 <Button 
                   className="mt-4 bg-pcos hover:bg-pcos-dark"
-                  onClick={() => window.location.href = '/analyze'}
+                  onClick={() => navigate('/analyze')}
                 >
                   Analyze Food
                 </Button>

@@ -3,15 +3,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Send } from "lucide-react";
 import { useUser } from '@/contexts/UserContext';
+import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+  type?: 'text' | 'food-analysis';
+  foodAnalysis?: any;
 }
 
 // Hardcoded demo responses for now
@@ -47,6 +51,25 @@ const getDemoResponse = (message: string, profile: any): string => {
   return "I'm your PCOS Wellness assistant. I can help with questions about managing symptoms, diet recommendations, exercise guidance, and understanding your condition better. How can I support you today?";
 };
 
+const getFoodAnalysisResponse = (foodAnalysis: any): string => {
+  const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : 
+                            foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
+  
+  const baseResponse = `I've analyzed your ${foodAnalysis.foodName}. It has ${compatibilityLevel} compatibility (${foodAnalysis.pcosCompatibility}%) with your PCOS management plan.\n\n`;
+  
+  const nutritionInfo = `Nutritional breakdown: ${foodAnalysis.nutritionalInfo.carbs}g carbs, ${foodAnalysis.nutritionalInfo.protein}g protein, ${foodAnalysis.nutritionalInfo.fats}g fats. It has a ${foodAnalysis.nutritionalInfo.glycemicLoad.toLowerCase()} glycemic load and is ${foodAnalysis.nutritionalInfo.inflammatoryScore.toLowerCase()} in terms of inflammation.\n\n`;
+  
+  const recommendation = `${foodAnalysis.recommendation}\n\n`;
+  
+  let alternativesText = "";
+  if (foodAnalysis.pcosCompatibility < 80 && foodAnalysis.alternatives && foodAnalysis.alternatives.length > 0) {
+    alternativesText = `Here are some better alternatives you might consider:\n` + 
+      foodAnalysis.alternatives.map((alt: string) => `• ${alt}`).join('\n');
+  }
+  
+  return baseResponse + nutritionInfo + recommendation + alternativesText;
+};
+
 const ChatInterface: React.FC = () => {
   const { profile } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,13 +77,14 @@ const ChatInterface: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const location = useLocation();
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add initial greeting message
+  // Add initial greeting message and handle food analysis from navigation
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
@@ -72,7 +96,41 @@ const ChatInterface: React.FC = () => {
         }
       ]);
     }
-  }, [messages.length, profile.name]);
+    
+    // Check if we have food analysis from navigation
+    if (location.state?.foodAnalysis) {
+      const foodAnalysis = location.state.foodAnalysis;
+      
+      // Add a system message about the food analysis
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: `I want to share the analysis of my ${foodAnalysis.foodName} with you.`,
+        timestamp: new Date(),
+        type: 'food-analysis',
+        foodAnalysis: foodAnalysis
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Simulate AI response with delay
+      setIsTyping(true);
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: getFoodAnalysisResponse(foodAnalysis),
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        setIsTyping(false);
+      }, 1500);
+      
+      // Clear the state so it doesn't reappear on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, messages.length, profile.name]);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
@@ -110,6 +168,47 @@ const ChatInterface: React.FC = () => {
     }
   };
 
+  const renderFoodAnalysisMessage = (message: Message) => {
+    if (!message.foodAnalysis) return null;
+    
+    const foodAnalysis = message.foodAnalysis;
+    
+    return (
+      <div className="mb-2 mt-1">
+        <div className="flex gap-3">
+          {foodAnalysis.imageUrl && (
+            <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
+              <img 
+                src={foodAnalysis.imageUrl} 
+                alt={foodAnalysis.foodName} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="space-y-2">
+            <div className="font-medium">{foodAnalysis.foodName}</div>
+            
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs">
+                <span>PCOS Compatibility: {foodAnalysis.pcosCompatibility}%</span>
+                <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${
+                      foodAnalysis.pcosCompatibility > 70 ? "bg-green-500" : 
+                      foodAnalysis.pcosCompatibility > 40 ? "bg-yellow-500" : 
+                      "bg-red-500"
+                    }`}
+                    style={{ width: `${foodAnalysis.pcosCompatibility}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
@@ -126,6 +225,7 @@ const ChatInterface: React.FC = () => {
               }`}
             >
               <CardContent className="p-3">
+                {message.type === 'food-analysis' && renderFoodAnalysisMessage(message)}
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 <div 
                   className={`text-xs mt-1 ${

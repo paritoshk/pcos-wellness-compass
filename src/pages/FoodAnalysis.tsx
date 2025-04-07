@@ -3,12 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Share2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
-import { useUser } from '@/contexts/UserContext';
+import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
 import FireworksAPIKeyInput from '@/components/FireworksAPIKeyInput';
+import { useNavigate } from 'react-router-dom';
 
 interface FoodAnalysisResult {
   foodName: string;
@@ -29,18 +30,10 @@ const FoodAnalysis: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
   const [progress, setProgress] = useState(0);
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: hookToast } = useToast();
-  const { profile } = useUser();
-
-  useEffect(() => {
-    // Check for saved API key on component mount
-    const savedApiKey = localStorage.getItem("fireworks_api_key");
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
-  }, []);
+  const { profile, apiKey, setApiKey, addFoodAnalysis } = useUser();
+  const navigate = useNavigate();
 
   const handleCapture = () => {
     fileInputRef.current?.click();
@@ -124,8 +117,58 @@ const FoodAnalysis: React.FC = () => {
   };
 
   const saveToHistory = () => {
-    // Implement history saving functionality here
+    if (!analysisResult || !image) return;
+    
+    const newAnalysisItem: FoodAnalysisItem = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      foodName: analysisResult.foodName,
+      imageUrl: image,
+      pcosCompatibility: analysisResult.pcosCompatibility,
+      nutritionalInfo: { ...analysisResult.nutritionalInfo },
+      recommendation: analysisResult.recommendation,
+      alternatives: [...analysisResult.alternatives]
+    };
+    
+    addFoodAnalysis(newAnalysisItem);
     toast.success("Analysis saved to history");
+    
+    // Navigate to history page after saving
+    navigate('/history');
+  };
+
+  const shareWithChat = () => {
+    if (!analysisResult) return;
+    
+    // Save to history first
+    if (image) {
+      const newAnalysisItem: FoodAnalysisItem = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        foodName: analysisResult.foodName,
+        imageUrl: image,
+        pcosCompatibility: analysisResult.pcosCompatibility,
+        nutritionalInfo: { ...analysisResult.nutritionalInfo },
+        recommendation: analysisResult.recommendation,
+        alternatives: [...analysisResult.alternatives]
+      };
+      
+      addFoodAnalysis(newAnalysisItem);
+    }
+    
+    // Navigate to chat
+    navigate('/chat', { 
+      state: { 
+        foodAnalysis: {
+          ...analysisResult,
+          imageUrl: image
+        } 
+      }
+    });
+  };
+
+  const handleApiKeySubmit = (key: string) => {
+    setApiKey(key);
   };
 
   return (
@@ -135,7 +178,7 @@ const FoodAnalysis: React.FC = () => {
       {!apiKey && (
         <Card className="mb-6">
           <CardContent className="p-6">
-            <FireworksAPIKeyInput onApiKeySubmit={setApiKey} />
+            <FireworksAPIKeyInput onApiKeySubmit={handleApiKeySubmit} />
           </CardContent>
         </Card>
       )}
@@ -204,7 +247,6 @@ const FoodAnalysis: React.FC = () => {
                 <Progress 
                   value={progress} 
                   className="h-2"
-                  indicatorClassName="bg-pcos"
                 />
               </div>
             )}
@@ -226,12 +268,11 @@ const FoodAnalysis: React.FC = () => {
                 </div>
                 <Progress 
                   value={analysisResult.pcosCompatibility} 
-                  className="h-2"
-                  indicatorClassName={
+                  className={`h-2 ${
                     analysisResult.pcosCompatibility > 70 ? "bg-green-500" : 
                     analysisResult.pcosCompatibility > 40 ? "bg-yellow-500" : 
                     "bg-red-500"
-                  }
+                  }`}
                 />
               </div>
               
@@ -266,14 +307,16 @@ const FoodAnalysis: React.FC = () => {
                 <p className="text-muted-foreground text-sm">{analysisResult.recommendation}</p>
               </div>
               
-              <div>
-                <h3 className="font-medium mb-1">Alternative Options</h3>
-                <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                  {analysisResult.alternatives.map((alternative, index) => (
-                    <li key={index}>{alternative}</li>
-                  ))}
-                </ul>
-              </div>
+              {analysisResult.pcosCompatibility < 80 && analysisResult.alternatives.length > 0 && (
+                <div>
+                  <h3 className="font-medium mb-1">Alternative Options</h3>
+                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                    {analysisResult.alternatives.map((alternative, index) => (
+                      <li key={index}>{alternative}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -281,13 +324,22 @@ const FoodAnalysis: React.FC = () => {
             <Button variant="outline" onClick={clearImage}>
               Analyze Another Food
             </Button>
-            <Button 
-              variant="outline" 
-              className="border-pcos text-pcos hover:bg-pcos/10"
-              onClick={saveToHistory}
-            >
-              Save to History
-            </Button>
+            <div className="space-x-2">
+              <Button 
+                variant="outline" 
+                className="border-pcos text-pcos hover:bg-pcos/10"
+                onClick={shareWithChat}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share in Chat
+              </Button>
+              <Button 
+                className="bg-pcos hover:bg-pcos-dark"
+                onClick={saveToHistory}
+              >
+                Save to History
+              </Button>
+            </div>
           </div>
         </div>
       )}
