@@ -87,12 +87,27 @@ export class FireworksAIService {
   }
 
   private createAnalysisPrompt(userProfile: any): string {
-    const dietaryPreferences = userProfile.dietaryPreferences?.join(", ") || "None specified";
-    const insulinStatus = userProfile.insulinResistant ? "has insulin resistance" : "does not have insulin resistance";
+    const age = userProfile.age || 'Unknown';
+    const symptoms = userProfile.symptoms?.join(', ') || 'General PCOS symptoms';
+    const insulinStatus = userProfile.insulinResistant ? 'Yes' : 'Unknown/No';
+    const weightGoals = userProfile.weightGoals || 'Management';
+    const dietaryPreferences = userProfile.dietaryPreferences?.join(', ') || 'None specified';
     
-    return `You are an AI nutritionist specialized in PCOS (Polycystic Ovary Syndrome) nutrition analysis.
-    
-Analyze the food in this image and provide a detailed assessment for a PCOS patient who ${insulinStatus} and has the following dietary preferences: ${dietaryPreferences}.
+    return `You are a specialized nutritionist and expert in PCOS (Polycystic Ovary Syndrome) dietary management. Your task is to analyze food images to provide personalized dietary guidance for PCOS patients.
+
+Your understanding of PCOS dietary management includes:
+1. Insulin resistance is present in 70-80% of PCOS patients, requiring low glycemic index foods
+2. Anti-inflammatory diet components help reduce PCOS symptoms
+3. Hormone-balancing foods can help regulate menstrual irregularities
+4. Weight management is often a key factor in symptom control
+5. Individual responses to foods vary based on specific PCOS phenotype
+
+Please analyze this food image for a PCOS patient with the following profile:
+- Age: ${age}
+- PCOS symptoms: ${symptoms}
+- Insulin resistance: ${insulinStatus}
+- Current weight goals: ${weightGoals}
+- Dietary preferences: ${dietaryPreferences}
 
 Return your analysis in JSON format with the following structure:
 {
@@ -105,8 +120,8 @@ Return your analysis in JSON format with the following structure:
     "glycemicLoad": "Low", "Medium", or "High",
     "inflammatoryScore": "Anti-inflammatory", "Neutral", or "Pro-inflammatory"
   },
-  "recommendation": "Detailed explanation on why this food is good or bad for PCOS",
-  "alternatives": ["3-5 better alternatives if pcosCompatibility is below 80%"]
+  "recommendation": "Detailed explanation on why this food is good or bad for PCOS and specific benefits or concerns for this individual's profile",
+  "alternatives": ["Better alternatives if pcosCompatibility is below 80%"]
 }`;
   }
 

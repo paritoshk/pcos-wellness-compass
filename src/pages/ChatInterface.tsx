@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Send } from "lucide-react";
+import { Send, Camera } from "lucide-react";
 import { useUser } from '@/contexts/UserContext';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
 
 interface Message {
   id: string;
@@ -75,6 +76,7 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showFoodAnalyzer, setShowFoodAnalyzer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const location = useLocation();
@@ -91,7 +93,7 @@ const ChatInterface: React.FC = () => {
         {
           id: '1',
           role: 'assistant',
-          content: `Hi ${profile.name}! I'm your PCOS Wellness assistant. How can I help you today?`,
+          content: `Hi ${profile.name}! I'm your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
           timestamp: new Date()
         }
       ]);
@@ -167,6 +169,37 @@ const ChatInterface: React.FC = () => {
       handleSendMessage();
     }
   };
+  
+  const handleFoodAnalysis = (foodAnalysis: any) => {
+    // Hide the food analyzer
+    setShowFoodAnalyzer(false);
+    
+    // Add a user message with food analysis
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: `I've analyzed my ${foodAnalysis.foodName}.`,
+      timestamp: new Date(),
+      type: 'food-analysis',
+      foodAnalysis: foodAnalysis
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Simulate AI response with delay
+    setIsTyping(true);
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: getFoodAnalysisResponse(foodAnalysis),
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsTyping(false);
+    }, 1500);
+  };
 
   const renderFoodAnalysisMessage = (message: Message) => {
     if (!message.foodAnalysis) return null;
@@ -211,6 +244,10 @@ const ChatInterface: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full p-4">
+      {showFoodAnalyzer && (
+        <ChatFoodAnalyzer onAnalysisComplete={handleFoodAnalysis} />
+      )}
+      
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
         {messages.map((message) => (
           <div 
@@ -259,6 +296,14 @@ const ChatInterface: React.FC = () => {
       </div>
       
       <div className="flex gap-2 sticky bottom-0">
+        <Button 
+          variant="outline"
+          size="icon"
+          onClick={() => setShowFoodAnalyzer(!showFoodAnalyzer)}
+          className="bg-white border-pcos text-pcos hover:bg-pcos/10"
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
         <Input
           placeholder="Type your message..."
           value={currentMessage}
