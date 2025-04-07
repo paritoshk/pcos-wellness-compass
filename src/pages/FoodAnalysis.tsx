@@ -1,15 +1,18 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Camera, X } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 import { useUser } from '@/contexts/UserContext';
+import { FireworksAIService } from '@/services/fireworksAI';
+import FireworksAPIKeyInput from '@/components/FireworksAPIKeyInput';
 
 interface FoodAnalysisResult {
   foodName: string;
-  pcosCompatibility: number; // 0-100
+  pcosCompatibility: number;
   nutritionalInfo: {
     carbs: number;
     protein: number;
@@ -25,9 +28,19 @@ const FoodAnalysis: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const { toast: hookToast } = useToast();
   const { profile } = useUser();
+
+  useEffect(() => {
+    // Check for saved API key on component mount
+    const savedApiKey = localStorage.getItem("fireworks_api_key");
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
 
   const handleCapture = () => {
     fileInputRef.current?.click();
@@ -39,7 +52,7 @@ const FoodAnalysis: React.FC = () => {
 
     // Check file size and type
     if (file.size > 5 * 1024 * 1024) {
-      toast({
+      hookToast({
         title: "File too large",
         description: "Please select an image under 5MB",
         variant: "destructive",
@@ -48,7 +61,7 @@ const FoodAnalysis: React.FC = () => {
     }
 
     if (!file.type.includes('image/')) {
-      toast({
+      hookToast({
         title: "Invalid file type",
         description: "Please select an image file",
         variant: "destructive",
@@ -69,45 +82,63 @@ const FoodAnalysis: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const analyzeImage = () => {
-    if (!image) return;
+  const analyzeImage = async () => {
+    if (!image || !apiKey) return;
     
     setIsAnalyzing(true);
+    setProgress(0);
+
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 500);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Mock data for demo
-      const mockResults: FoodAnalysisResult = {
-        foodName: "Greek Salad with Feta",
-        pcosCompatibility: 85,
-        nutritionalInfo: {
-          carbs: 12,
-          protein: 8,
-          fats: 15,
-          glycemicLoad: "Low",
-          inflammatoryScore: "Anti-inflammatory"
-        },
-        recommendation: "This is a good choice! The vegetables provide fiber and antioxidants, while the olive oil offers healthy fats. The feta adds protein but comes with moderate saturated fat, so enjoy in moderation.",
-        alternatives: ["Mediterranean bowl with chickpeas instead of feta", "Spinach salad with grilled chicken", "Quinoa tabbouleh"]
-      };
+    try {
+      const fireworksService = new FireworksAIService({
+        apiKey,
+        model: "accounts/fireworks/models/llama4-maverick-instruct-basic"
+      });
+
+      const result = await fireworksService.analyzeFoodImage(image, profile);
       
-      // Personalize based on user profile
-      if (profile.insulinResistant) {
-        mockResults.recommendation += " Since you have insulin resistance, this low-glycemic option is particularly suitable for your needs.";
+      if (result) {
+        setAnalysisResult(result);
+        toast.success("Analysis complete!");
+      } else {
+        toast.error("Failed to analyze the image. Please try again.");
       }
-      
-      if (profile.dietaryPreferences.includes("Vegetarian")) {
-        mockResults.alternatives = mockResults.alternatives.filter(alt => !alt.toLowerCase().includes("chicken"));
-      }
-      
-      setAnalysisResult(mockResults);
-      setIsAnalyzing(false);
-    }, 2000);
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast.error("An error occurred during analysis");
+    } finally {
+      clearInterval(progressInterval);
+      setProgress(100);
+      setTimeout(() => setIsAnalyzing(false), 500);
+    }
+  };
+
+  const saveToHistory = () => {
+    // Implement history saving functionality here
+    toast.success("Analysis saved to history");
   };
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Food Analysis</h1>
+      
+      {!apiKey && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <FireworksAPIKeyInput onApiKeySubmit={setApiKey} />
+          </CardContent>
+        </Card>
+      )}
       
       <Card className="mb-6">
         <CardContent className="p-6">
@@ -131,6 +162,7 @@ const FoodAnalysis: React.FC = () => {
                   onClick={handleCapture} 
                   className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
                   size="lg"
+                  disabled={!apiKey}
                 >
                   <Camera className="h-5 w-5" />
                   Take Photo
@@ -154,13 +186,13 @@ const FoodAnalysis: React.FC = () => {
               )}
             </div>
             
-            {image && !analysisResult && (
+            {image && !analysisResult && !isAnalyzing && (
               <Button 
                 onClick={analyzeImage} 
                 className="w-full bg-pcos hover:bg-pcos-dark" 
-                disabled={isAnalyzing}
+                disabled={isAnalyzing || !apiKey}
               >
-                {isAnalyzing ? "Analyzing..." : "Analyze Food"}
+                Analyze Food
               </Button>
             )}
             
@@ -169,7 +201,11 @@ const FoodAnalysis: React.FC = () => {
                 <p className="text-center text-sm text-muted-foreground">
                   Analyzing your food...
                 </p>
-                <Progress value={45} className="h-2" />
+                <Progress 
+                  value={progress} 
+                  className="h-2"
+                  indicatorClassName="bg-pcos"
+                />
               </div>
             )}
           </div>
@@ -248,6 +284,7 @@ const FoodAnalysis: React.FC = () => {
             <Button 
               variant="outline" 
               className="border-pcos text-pcos hover:bg-pcos/10"
+              onClick={saveToHistory}
             >
               Save to History
             </Button>
