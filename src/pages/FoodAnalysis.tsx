@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Camera, X } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 import { useUser } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
 import FireworksAPIKeyInput from '@/components/FireworksAPIKeyInput';
