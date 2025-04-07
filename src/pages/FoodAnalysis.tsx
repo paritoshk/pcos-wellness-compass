@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
-import FireworksAPIKeyInput from '@/components/FireworksAPIKeyInput';
 import { useNavigate } from 'react-router-dom';
 
 interface FoodAnalysisResult {
@@ -25,6 +23,8 @@ interface FoodAnalysisResult {
   alternatives: string[];
 }
 
+const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
+
 const FoodAnalysis: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -35,6 +35,12 @@ const FoodAnalysis: React.FC = () => {
   const { profile, apiKey, setApiKey, addFoodAnalysis } = useUser();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!apiKey) {
+      setApiKey(DEFAULT_API_KEY);
+    }
+  }, [apiKey, setApiKey]);
+
   const handleCapture = () => {
     fileInputRef.current?.click();
   };
@@ -43,7 +49,6 @@ const FoodAnalysis: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size and type
     if (file.size > 5 * 1024 * 1024) {
       hookToast({
         title: "File too large",
@@ -76,12 +81,11 @@ const FoodAnalysis: React.FC = () => {
   };
 
   const analyzeImage = async () => {
-    if (!image || !apiKey) return;
+    if (!image) return;
     
     setIsAnalyzing(true);
     setProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) {
@@ -93,10 +97,7 @@ const FoodAnalysis: React.FC = () => {
     }, 500);
     
     try {
-      const fireworksService = new FireworksAIService({
-        apiKey,
-        model: "accounts/fireworks/models/llama4-maverick-instruct-basic"
-      });
+      const fireworksService = new FireworksAIService();
 
       const result = await fireworksService.analyzeFoodImage(image, profile);
       
@@ -133,14 +134,12 @@ const FoodAnalysis: React.FC = () => {
     addFoodAnalysis(newAnalysisItem);
     toast.success("Analysis saved to history");
     
-    // Navigate to history page after saving
     navigate('/history');
   };
 
   const shareWithChat = () => {
     if (!analysisResult) return;
     
-    // Save to history first
     if (image) {
       const newAnalysisItem: FoodAnalysisItem = {
         id: Date.now().toString(),
@@ -156,7 +155,6 @@ const FoodAnalysis: React.FC = () => {
       addFoodAnalysis(newAnalysisItem);
     }
     
-    // Navigate to chat
     navigate('/chat', { 
       state: { 
         foodAnalysis: {
@@ -167,21 +165,9 @@ const FoodAnalysis: React.FC = () => {
     });
   };
 
-  const handleApiKeySubmit = (key: string) => {
-    setApiKey(key);
-  };
-
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Food Analysis</h1>
-      
-      {!apiKey && (
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <FireworksAPIKeyInput onApiKeySubmit={handleApiKeySubmit} />
-          </CardContent>
-        </Card>
-      )}
       
       <Card className="mb-6">
         <CardContent className="p-6">
@@ -205,7 +191,6 @@ const FoodAnalysis: React.FC = () => {
                   onClick={handleCapture} 
                   className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
                   size="lg"
-                  disabled={!apiKey}
                 >
                   <Camera className="h-5 w-5" />
                   Take Photo
@@ -232,8 +217,8 @@ const FoodAnalysis: React.FC = () => {
             {image && !analysisResult && !isAnalyzing && (
               <Button 
                 onClick={analyzeImage} 
-                className="w-full bg-pcos hover:bg-pcos-dark" 
-                disabled={isAnalyzing || !apiKey}
+                className="w-full bg-pcos hover:bg-pcos-dark"
+                disabled={isAnalyzing}
               >
                 Analyze Food
               </Button>

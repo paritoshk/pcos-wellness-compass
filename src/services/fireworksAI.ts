@@ -2,8 +2,8 @@
 import { toast } from "sonner";
 
 interface FireworksAIConfig {
-  apiKey: string;
-  model: string;
+  apiKey?: string;
+  model?: string;
 }
 
 interface AnalysisResult {
@@ -25,8 +25,9 @@ export class FireworksAIService {
   private model: string;
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
-  constructor(config: FireworksAIConfig) {
-    this.apiKey = config.apiKey;
+  constructor(config: FireworksAIConfig = {}) {
+    // Use the provided API key or default to the hardcoded one
+    this.apiKey = config.apiKey || "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }
 

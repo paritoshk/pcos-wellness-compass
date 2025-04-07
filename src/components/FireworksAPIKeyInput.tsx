@@ -9,6 +9,7 @@ interface FireworksAPIKeyInputProps {
   onApiKeySubmit: (apiKey: string) => void;
 }
 
+// This component is now deprecated as we use a default API key
 const FireworksAPIKeyInput = ({ onApiKeySubmit }: FireworksAPIKeyInputProps) => {
   const [apiKey, setApiKey] = useState("");
   const { setApiKey: setGlobalApiKey } = useUser();
@@ -21,30 +22,8 @@ const FireworksAPIKeyInput = ({ onApiKeySubmit }: FireworksAPIKeyInputProps) => 
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-muted/50 rounded-md">
-      <h3 className="font-medium">Fireworks AI API Key</h3>
-      <p className="text-sm text-muted-foreground">
-        Enter your Fireworks AI API key to enable food image analysis
-      </p>
-      <div className="flex gap-2">
-        <Input
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter your API key..."
-          type="password"
-          className="flex-1"
-        />
-        <Button type="submit" size="sm">
-          <Key className="h-4 w-4 mr-2" />
-          Save Key
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Your API key is stored locally and is only sent to Fireworks AI for image analysis.
-      </p>
-    </form>
-  );
+  // Return null as we no longer need this component
+  return null;
 };
 
 export default FireworksAPIKeyInput;

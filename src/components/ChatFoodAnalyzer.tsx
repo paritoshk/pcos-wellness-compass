@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,19 +6,26 @@ import { Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
-import FireworksAPIKeyInput from '@/components/FireworksAPIKeyInput';
 
 interface ChatFoodAnalyzerProps {
   onAnalysisComplete: (analysis: FoodAnalysisItem) => void;
 }
+
+const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
 
 const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete }) => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { profile, apiKey, addFoodAnalysis } = useUser();
+  const { profile, apiKey, setApiKey, addFoodAnalysis } = useUser();
   
+  useEffect(() => {
+    if (!apiKey) {
+      setApiKey(DEFAULT_API_KEY);
+    }
+  }, [apiKey, setApiKey]);
+
   const handleCapture = () => {
     fileInputRef.current?.click();
   };
@@ -28,7 +34,6 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size and type
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Please select an image under 5MB");
       return;
@@ -52,12 +57,11 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
   };
 
   const analyzeImage = async () => {
-    if (!image || !apiKey) return;
+    if (!image) return;
     
     setIsAnalyzing(true);
     setProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) {
@@ -69,15 +73,11 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
     }, 500);
     
     try {
-      const fireworksService = new FireworksAIService({
-        apiKey,
-        model: "accounts/fireworks/models/llama4-maverick-instruct-basic"
-      });
+      const fireworksService = new FireworksAIService();
 
       const result = await fireworksService.analyzeFoodImage(image, profile);
       
       if (result) {
-        // Create analysis item
         const newAnalysisItem: FoodAnalysisItem = {
           id: Date.now().toString(),
           date: new Date().toISOString(),
@@ -89,13 +89,10 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
           alternatives: [...result.alternatives]
         };
         
-        // Save to history
         addFoodAnalysis(newAnalysisItem);
         
-        // Pass to parent
         onAnalysisComplete(newAnalysisItem);
         
-        // Clean up
         setImage(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         
@@ -115,16 +112,6 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
       }, 500);
     }
   };
-
-  if (!apiKey) {
-    return (
-      <Card className="mb-4">
-        <CardContent className="p-4">
-          <FireworksAPIKeyInput onApiKeySubmit={() => {}} />
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="mb-4">
