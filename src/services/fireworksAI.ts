@@ -27,7 +27,7 @@ export class FireworksAIService {
 
   constructor(config: FireworksAIConfig = {}) {
     // Use the provided API key or default to the hardcoded one
-    this.apiKey = config.apiKey || "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
+    this.apiKey = config.apiKey || "KEY";
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }
 
