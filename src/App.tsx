@@ -28,8 +28,8 @@ const App = () => (
     clientId={AUTH0_CLIENT_ID}
     authorizationParams={{
       redirect_uri: window.location.origin,
-      appState: { returnTo: window.location.pathname }
     }}
+    cacheLocation="localstorage"
   >
     <QueryClientProvider client={queryClient}>
       <UserProvider>
