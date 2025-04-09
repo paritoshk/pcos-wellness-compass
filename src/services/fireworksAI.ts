@@ -28,7 +28,7 @@ export class FireworksAIService {
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
-    // Use the environment API key or fall back to default
+    // Always use the default API key
     this.apiKey = DEFAULT_API_KEY;
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }

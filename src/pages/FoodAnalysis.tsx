@@ -32,14 +32,8 @@ const FoodAnalysis: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: hookToast } = useToast();
-  const { profile, apiKey, setApiKey, addFoodAnalysis } = useUser();
+  const { profile, addFoodAnalysis } = useUser();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!apiKey) {
-      setApiKey(DEFAULT_API_KEY);
-    }
-  }, [apiKey, setApiKey]);
 
   const handleCapture = () => {
     fileInputRef.current?.click();

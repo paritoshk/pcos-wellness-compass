@@ -35,6 +35,8 @@ interface UserContextType {
   isProfileComplete: boolean;
   foodAnalysisHistory: FoodAnalysisItem[];
   addFoodAnalysis: (analysis: FoodAnalysisItem) => void;
+  apiKey: string;
+  setApiKey: (key: string) => void;
 }
 
 const defaultProfile: PCOSProfile = {
@@ -52,7 +54,9 @@ const UserContext = createContext<UserContextType>({
   updateProfile: () => {},
   isProfileComplete: false,
   foodAnalysisHistory: [],
-  addFoodAnalysis: () => {}
+  addFoodAnalysis: () => {},
+  apiKey: '',
+  setApiKey: () => {}
 });
 
 export const useUser = () => useContext(UserContext);
@@ -70,6 +74,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [apiKey, setApiKey] = useState<string>(() => {
+    const savedApiKey = localStorage.getItem('fireworksApiKey');
+    return savedApiKey || '';
+  });
+
   // Update the profile with Auth0 user info when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -83,6 +92,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
   }, [isAuthenticated, user]);
+
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('fireworksApiKey', apiKey);
+    }
+  }, [apiKey]);
 
   const isProfileComplete = profile.completedSetup;
 
@@ -111,7 +127,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProfile, 
       isProfileComplete, 
       foodAnalysisHistory, 
-      addFoodAnalysis
+      addFoodAnalysis,
+      apiKey,
+      setApiKey
     }}>
       {children}
     </UserContext.Provider>
