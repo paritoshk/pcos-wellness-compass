@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import WelcomePage from "./pages/WelcomePage";
 import ProfileSetup from "./pages/ProfileSetup";
@@ -18,7 +18,7 @@ import AuthGuard from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
 
-// Auth0 domain and client ID - these should be stored in environment variables
+// Auth0 domain and client ID
 const AUTH0_DOMAIN = "dev-4xkd4j2dtjlsomra.us.auth0.com";
 const AUTH0_CLIENT_ID = "XpEPlYFXeEvVefepy5GtW0Sz340dZz1p";
 
@@ -27,7 +27,8 @@ const App = () => (
     domain={AUTH0_DOMAIN}
     clientId={AUTH0_CLIENT_ID}
     authorizationParams={{
-      redirect_uri: window.location.origin
+      redirect_uri: window.location.origin,
+      appState: { returnTo: window.location.pathname }
     }}
   >
     <QueryClientProvider client={queryClient}>
