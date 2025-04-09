@@ -1,15 +1,15 @@
 
 import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const LoginButton: React.FC = () => {
-  const { loginWithRedirect } = useAuth0();
+  const navigate = useNavigate();
 
   return (
     <Button 
-      onClick={() => loginWithRedirect()}
+      onClick={() => navigate('/profile')}
       className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
       size="lg"
     >

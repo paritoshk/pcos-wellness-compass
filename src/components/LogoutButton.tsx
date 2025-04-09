@@ -1,19 +1,24 @@
 
 import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 
 const LogoutButton: React.FC = () => {
-  const { logout } = useAuth0();
+  const navigate = useNavigate();
+  const { updateProfile } = useUser();
+  
+  const handleLogout = () => {
+    // Reset user profile completed setup status
+    updateProfile({ completedSetup: false });
+    // Navigate to welcome page
+    navigate('/');
+  };
 
   return (
     <Button 
-      onClick={() => logout({ 
-        logoutParams: { 
-          returnTo: window.location.origin 
-        } 
-      })}
+      onClick={handleLogout}
       variant="ghost"
       className="flex items-center gap-2 hover:bg-red-100 hover:text-red-600 transition-colors"
     >
