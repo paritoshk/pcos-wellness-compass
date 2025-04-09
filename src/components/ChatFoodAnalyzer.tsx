@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -11,21 +12,13 @@ interface ChatFoodAnalyzerProps {
   onAnalysisComplete: (analysis: FoodAnalysisItem) => void;
 }
 
-const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
-
 const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete }) => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { profile, apiKey, setApiKey, addFoodAnalysis } = useUser();
+  const { profile, addFoodAnalysis } = useUser();
   
-  useEffect(() => {
-    if (!apiKey) {
-      setApiKey(DEFAULT_API_KEY);
-    }
-  }, [apiKey, setApiKey]);
-
   const handleCapture = () => {
     fileInputRef.current?.click();
   };
@@ -91,8 +84,10 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
         
         addFoodAnalysis(newAnalysisItem);
         
+        // Call the callback function with the analysis result
         onAnalysisComplete(newAnalysisItem);
         
+        // Clear the image after analysis is complete and sent to chat
         setImage(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         

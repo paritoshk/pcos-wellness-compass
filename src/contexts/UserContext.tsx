@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export interface PCOSProfile {
   name: string;
@@ -34,8 +35,6 @@ interface UserContextType {
   isProfileComplete: boolean;
   foodAnalysisHistory: FoodAnalysisItem[];
   addFoodAnalysis: (analysis: FoodAnalysisItem) => void;
-  apiKey: string | null;
-  setApiKey: (key: string) => void;
 }
 
 const defaultProfile: PCOSProfile = {
@@ -53,14 +52,14 @@ const UserContext = createContext<UserContextType>({
   updateProfile: () => {},
   isProfileComplete: false,
   foodAnalysisHistory: [],
-  addFoodAnalysis: () => {},
-  apiKey: null,
-  setApiKey: () => {}
+  addFoodAnalysis: () => {}
 });
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth0();
+  
   const [profile, setProfile] = useState<PCOSProfile>(() => {
     const savedProfile = localStorage.getItem('pcosProfile');
     return savedProfile ? JSON.parse(savedProfile) : defaultProfile;
@@ -71,9 +70,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [apiKey, setApiKeyState] = useState<string | null>(() => {
-    return localStorage.getItem('fireworks_api_key');
-  });
+  // Update the profile with Auth0 user info when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setProfile(prev => {
+        // Only update name from Auth0 if it's not already set
+        const updatedProfile = {
+          ...prev,
+          name: prev.name || user.name || user.nickname || '',
+        };
+        return updatedProfile;
+      });
+    }
+  }, [isAuthenticated, user]);
 
   const isProfileComplete = profile.completedSetup;
 
@@ -92,11 +101,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const setApiKey = (key: string) => {
-    localStorage.setItem('fireworks_api_key', key);
-    setApiKeyState(key);
-  };
-
   useEffect(() => {
     localStorage.setItem('pcosProfile', JSON.stringify(profile));
   }, [profile]);
@@ -107,9 +111,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProfile, 
       isProfileComplete, 
       foodAnalysisHistory, 
-      addFoodAnalysis,
-      apiKey,
-      setApiKey
+      addFoodAnalysis
     }}>
       {children}
     </UserContext.Provider>

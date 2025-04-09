@@ -2,7 +2,6 @@
 import { toast } from "sonner";
 
 interface FireworksAIConfig {
-  apiKey?: string;
   model?: string;
 }
 
@@ -20,14 +19,17 @@ interface AnalysisResult {
   alternatives: string[];
 }
 
+// Default API key used when no custom key is provided
+const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
+
 export class FireworksAIService {
   private apiKey: string;
   private model: string;
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
-    // Use the provided API key or default to the hardcoded one
-    this.apiKey = config.apiKey || "KEY";
+    // Use the environment API key or fall back to default
+    this.apiKey = DEFAULT_API_KEY;
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }
 
@@ -110,9 +112,9 @@ Please analyze this food image for a PCOS patient with the following profile:
 - Current weight goals: ${weightGoals}
 - Dietary preferences: ${dietaryPreferences}
 
-Return your analysis in JSON format with the following structure:
+For each food identified, please provide detailed analysis in JSON format with the following structure:
 {
-  "foodName": "Name of the food",
+  "foodName": "Name of the food with high confidence",
   "pcosCompatibility": 0-100 score indicating how compatible this food is for PCOS management,
   "nutritionalInfo": {
     "carbs": estimated carbs in grams,

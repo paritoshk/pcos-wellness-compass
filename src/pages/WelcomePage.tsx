@@ -1,107 +1,75 @@
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
+import { useAuth0 } from '@auth0/auth0-react';
 import { useUser } from '@/contexts/UserContext';
+import LoginButton from '@/components/LoginButton';
 
-const WelcomePage: React.FC = () => {
-  const { isProfileComplete } = useUser();
+const WelcomePage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth0();
+  const { isProfileComplete } = useUser();
 
   useEffect(() => {
-    // If profile is already complete, redirect to chat
-    if (isProfileComplete) {
-      navigate('/chat');
+    // If user is authenticated and has completed profile setup, redirect to chat
+    if (isAuthenticated && !isLoading) {
+      if (isProfileComplete) {
+        navigate('/chat');
+      } else {
+        navigate('/profile');
+      }
     }
-  }, [isProfileComplete, navigate]);
+  }, [isAuthenticated, isProfileComplete, isLoading, navigate]);
 
-  const handleGetStarted = () => {
-    navigate('/profile');
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pcos"></div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <div className="w-full max-w-md space-y-8 text-center">
-        <div className="space-y-2">
-          <img 
-            src="/placeholder.svg" 
-            alt="PCOS Wellness Compass Logo" 
-            className="mx-auto h-24 w-24 rounded-full bg-pcos/10 p-4"
-          />
-          <h1 className="text-4xl font-bold tracking-tight gradient-text">
-            PCOS Wellness Compass
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Your personalized guide for navigating life with PCOS
-          </p>
-        </div>
-
-        <div className="space-y-6 mt-10">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col items-center p-4 rounded-lg bg-card shadow-sm">
-              <div className="rounded-full bg-pcos/10 p-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-pcos/20 flex items-center justify-center text-pcos">
-                  📸
-                </div>
-              </div>
-              <h3 className="font-medium">Food Analysis</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Analyze foods for PCOS compatibility
-              </p>
-            </div>
+  // Only show the welcome page if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1 flex flex-col justify-center items-center p-6 bg-gradient-to-br from-background to-muted">
+          <div className="w-full max-w-md text-center space-y-6">
+            <h1 className="text-4xl font-bold gradient-text">PCOS Wellness Compass</h1>
+            <p className="text-xl text-muted-foreground">Your personalized guide for PCOS-friendly food choices</p>
             
-            <div className="flex flex-col items-center p-4 rounded-lg bg-card shadow-sm">
-              <div className="rounded-full bg-pcos-teal/10 p-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-pcos-teal/20 flex items-center justify-center text-pcos-teal">
-                  💬
+            <div className="space-y-8 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg">AI Food Analysis</h3>
+                  <p className="text-sm text-muted-foreground">Instantly analyze any meal for PCOS compatibility</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg">Personalized Advice</h3>
+                  <p className="text-sm text-muted-foreground">Get recommendations tailored to your PCOS profile</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg">Food Tracking</h3>
+                  <p className="text-sm text-muted-foreground">Log your meals and track your progress</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg">Expert Connect</h3>
+                  <p className="text-sm text-muted-foreground">Connect with PCOS nutritionists</p>
                 </div>
               </div>
-              <h3 className="font-medium">Personalized Chat</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Get PCOS-specific guidance
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center p-4 rounded-lg bg-card shadow-sm">
-              <div className="rounded-full bg-pcos-peach/10 p-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-pcos-peach/20 flex items-center justify-center text-pcos-peach">
-                  📋
-                </div>
+              
+              <div className="pt-4">
+                <LoginButton />
               </div>
-              <h3 className="font-medium">Symptom Tracking</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Log and monitor your symptoms
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center p-4 rounded-lg bg-card shadow-sm">
-              <div className="rounded-full bg-pcos-light/10 p-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-pcos-light/20 flex items-center justify-center text-pcos-light">
-                  👩‍⚕️
-                </div>
-              </div>
-              <h3 className="font-medium">Expert Connect</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Connect with PCOS specialists
-              </p>
             </div>
           </div>
-          
-          <Button 
-            onClick={handleGetStarted}
-            className="w-full bg-pcos hover:bg-pcos-dark text-white"
-            size="lg"
-          >
-            Get Started
-          </Button>
-          
-          <p className="text-xs text-muted-foreground">
-            Your data stays private and secure on your device
-          </p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // This return should never be reached due to redirects
+  return null;
 };
 
 export default WelcomePage;

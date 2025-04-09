@@ -1,13 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Menu, Camera, MessageCircle, FileText, HeartPulse } from "lucide-react";
+import LogoutButton from './LogoutButton';
 
 const Layout = () => {
   const { isProfileComplete, profile } = useUser();
+  const { user } = useAuth0();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,6 +39,8 @@ const Layout = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+  
+  const displayName = profile.name || user?.name || user?.nickname || "User";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -48,7 +53,7 @@ const Layout = () => {
             </Button>
             <h1 className="font-semibold text-xl gradient-text">PCOS Pal</h1>
           </div>
-          <div className="text-sm text-muted-foreground">Hi, {profile.name}</div>
+          <div className="text-sm text-muted-foreground">Hi, {displayName}</div>
         </div>
       </div>
 
@@ -68,6 +73,8 @@ const Layout = () => {
                   <span className="ml-2">{item.label}</span>
                 </Button>
               ))}
+              <Separator />
+              <LogoutButton />
             </div>
           </div>
         </div>
@@ -77,7 +84,7 @@ const Layout = () => {
       <div className="hidden md:flex md:flex-col md:w-64 border-r">
         <div className="p-4">
           <h1 className="font-semibold text-xl gradient-text">PCOS Wellness Compass</h1>
-          <p className="text-sm text-muted-foreground mt-1">Hi, {profile.name}</p>
+          <p className="text-sm text-muted-foreground mt-1">Hi, {displayName}</p>
         </div>
         
         <Separator />
@@ -96,6 +103,10 @@ const Layout = () => {
               </Button>
             ))}
           </div>
+        </div>
+        
+        <div className="p-4 border-t">
+          <LogoutButton />
         </div>
       </div>
 
