@@ -13,7 +13,8 @@ import ExpertConnect from "./pages/ExpertConnect";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import { UserProvider } from "./contexts/UserContext";
-import ManualAuthGuard from "./components/AuthGuard";
+import AuthGuard from "./components/AuthGuard";
+import LoginPage from "./pages/LoginPage";
 
 const queryClient = new QueryClient();
 
@@ -26,18 +27,19 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<WelcomePage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route 
               path="/profile" 
               element={
-                <ManualAuthGuard>
+                <AuthGuard>
                   <ProfileSetup />
-                </ManualAuthGuard>
+                </AuthGuard>
               } 
             />
             <Route element={
-              <ManualAuthGuard>
+              <AuthGuard>
                 <Layout />
-              </ManualAuthGuard>
+              </AuthGuard>
             }>
               <Route path="/chat" element={<ChatInterface />} />
               <Route path="/analyze" element={<FoodAnalysis />} />
