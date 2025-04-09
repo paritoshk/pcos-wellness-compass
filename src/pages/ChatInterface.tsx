@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Send, Camera, Trash2, X } from "lucide-react";
 import { useUser, ChatMessage } from '@/contexts/UserContext';
 import { useLocation } from 'react-router-dom';
@@ -405,27 +404,50 @@ Can you give me advice about this food for my PCOS?`;
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
     
-    // Add user message with unique ID using timestamp + random string
-    const userMessage: ChatMessage = {
-      id: Date.now() + '-' + Math.random().toString(36).substring(2, 9),
-      role: 'user',
-      content: currentMessage,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    addChatMessage(userMessage);
-    setCurrentMessage('');
-    setIsTyping(true);
-    
     try {
+      // Add user message with unique ID using timestamp + random string
+      const userMessage: ChatMessage = {
+        id: Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+        role: 'user',
+        content: currentMessage,
+        timestamp: new Date()
+      };
+      
+      // Update UI first
+      setMessages(prev => [...prev, userMessage]);
+      setCurrentMessage('');
+      setIsTyping(true);
+      
+      // Save to history - do this after UI update but before API call
+      try {
+        console.log('Saving user message to chat history');
+        addChatMessage(userMessage);
+      } catch (historyError) {
+        console.error('Failed to save user message to history:', historyError);
+        // Continue with the chat even if history saving fails
+      }
+      
       // Use the apiKey from the context that was already destructured at the component level
-      console.log('Using API key in chat:', apiKey);
-      const fireworksService = new FireworksAIService({ apiKey });
+      console.log('Using API key in chat:', apiKey ? 'API key is set' : 'API key is missing');
       
-      // Get real LLM response
-      const response = await fireworksService.sendChatMessage(userMessage.content, profile);
+      let response = '';
       
+      if (!apiKey) {
+        console.warn('API key is missing, using demo response');
+        response = getDemoResponse(userMessage.content, profile);
+      } else {
+        try {
+          // Get real LLM response
+          const fireworksService = new FireworksAIService({ apiKey });
+          response = await fireworksService.sendChatMessage(userMessage.content, profile);
+        } catch (apiError) {
+          console.error('Error getting LLM response:', apiError);
+          // Fallback to demo response in case of API error
+          response = getDemoResponse(userMessage.content, profile);
+        }
+      }
+      
+      // Create assistant message
       const assistantMessage: ChatMessage = {
         id: Date.now() + '-' + Math.random().toString(36).substring(2, 9),
         role: 'assistant',
@@ -433,20 +455,19 @@ Can you give me advice about this food for my PCOS?`;
         timestamp: new Date()
       };
       
+      // Update UI with assistant message
       setMessages(prev => [...prev, assistantMessage]);
-      addChatMessage(assistantMessage);
-    } catch (error) {
-      console.error('Error getting LLM response:', error);
-      // Fallback to demo response in case of error
-      const assistantMessage: ChatMessage = {
-        id: Date.now() + '-' + Math.random().toString(36).substring(2, 9),
-        role: 'assistant',
-        content: getDemoResponse(userMessage.content, profile),
-        timestamp: new Date()
-      };
       
-      setMessages(prev => [...prev, assistantMessage]);
-      addChatMessage(assistantMessage);
+      // Save assistant message to history
+      try {
+        console.log('Saving assistant message to chat history');
+        addChatMessage(assistantMessage);
+      } catch (historyError) {
+        console.error('Failed to save assistant message to history:', historyError);
+      }
+    } catch (error) {
+      console.error('Unexpected error in handleSendMessage:', error);
+      // toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsTyping(false);
     }

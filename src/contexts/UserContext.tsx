@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { chatHistoryService } from '@/services/chatHistoryService';
 
 export interface PCOSProfile {
   name: string;
@@ -120,18 +121,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return localStorage.getItem('isAuthenticated') === 'true';
   });
   
-  // Load chat history from localStorage
+  // Load chat history using the ChatHistoryService
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('chatHistory');
-    if (saved) {
-      // Parse the saved chat history and convert string timestamps back to Date objects
-      const parsedHistory = JSON.parse(saved);
-      return parsedHistory.map((message: any) => ({
-        ...message,
-        timestamp: new Date(message.timestamp)
-      }));
-    }
-    return [];
+    // Use the service to load chat history with proper error handling
+    return chatHistoryService.getHistory();
   });
 
   // Save API key to localStorage when it changes
@@ -197,13 +190,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('isAuthenticated', isAuthenticated.toString());
   }, [isAuthenticated]);
 
-  // Save chat history to localStorage
-  useEffect(() => {
-    // Limit chat history to 100 messages to prevent localStorage from getting too large
-    // Make sure we keep the most recent messages
-    const limitedHistory = chatHistory.slice(-100);
-    localStorage.setItem('chatHistory', JSON.stringify(limitedHistory));
-  }, [chatHistory]);
+  // We no longer need this effect since ChatHistoryService handles saving
+  // The individual addChatMessage function will handle saving each message
 
   useEffect(() => {
     localStorage.setItem('pcosProfile', JSON.stringify(profile));
@@ -238,13 +226,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       foodAnalysis: message.foodAnalysis
     };
     
-    console.log('Adding chat message to history:', validMessage);
-    setChatHistory(prev => [...prev, validMessage]);
+    try {
+      // Save to chat history service first
+      chatHistoryService.saveMessage(validMessage);
+      
+      // Then update the state
+      console.log('Adding chat message to history:', validMessage.id);
+      setChatHistory(prev => [...prev, validMessage]);
+    } catch (error) {
+      console.error('Error in addChatMessage:', error);
+    }
   };
 
   // Clear chat history function
   const clearChatHistory = () => {
-    setChatHistory([]);
+    try {
+      // Clear from service first
+      chatHistoryService.clearHistory();
+      
+      // Then update state
+      setChatHistory([]);
+      console.log('Chat history cleared successfully');
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+    }
   };
 
   return (

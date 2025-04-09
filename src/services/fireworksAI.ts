@@ -159,9 +159,11 @@ For each food identified, please provide detailed analysis in JSON format with t
 
   async sendChatMessage(message: string, userProfile: any): Promise<string> {
     try {
+      console.log('Sending chat message with API key:', this.apiKey ? 'API key is set' : 'API key is missing');
+      
       if (!this.apiKey) {
         toast.error("Please set your Fireworks AI API key in your profile settings");
-        throw new Error("API key is not set");
+        return "I'm sorry, but I can't process your request right now. The API key is missing. Please check your settings and try again.";
       }
       
       const prompt = this.createChatPrompt(userProfile);
@@ -192,14 +194,31 @@ For each food identified, please provide detailed analysis in JSON format with t
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to get a response");
+        console.error('API response error:', response.status, response.statusText);
+        try {
+          const errorData = await response.json();
+          console.error('API error details:', errorData);
+          toast.error("Error from API: " + (errorData.message || "Unknown error"));
+          return "I'm sorry, but there was an error processing your request. Please try again later.";
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          return "I'm sorry, but there was an error processing your request. Please try again later.";
+        }
       }
 
-      const data = await response.json();
-      const content = data.choices[0].message.content;
-      
-      return content;
+      try {
+        const data = await response.json();
+        console.log('API response received successfully');
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+          console.error('Invalid API response format:', data);
+          return "I received an invalid response format. Please try again.";
+        }
+        const content = data.choices[0].message.content;
+        return content;
+      } catch (parseError) {
+        console.error('Error parsing API response:', parseError);
+        return "I encountered an error processing the response. Please try again.";
+      }
     } catch (error: any) {
       console.error("Chat message error:", error);
       toast.error("Failed to get a response: " + (error.message || "Unknown error"));
