@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 interface FireworksAIConfig {
   model?: string;
+  apiKey?: string;
 }
 
 interface AnalysisResult {
@@ -19,22 +20,23 @@ interface AnalysisResult {
   alternatives: string[];
 }
 
-// Default API key used when no custom key is provided
-const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
-
 export class FireworksAIService {
   private apiKey: string;
   private model: string;
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
-    // Always use the default API key
-    this.apiKey = DEFAULT_API_KEY;
+    this.apiKey = config.apiKey || "";
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }
 
   async analyzeFoodImage(imageBase64: string, userProfile: any): Promise<AnalysisResult | null> {
     try {
+      if (!this.apiKey) {
+        toast.error("Please set your Fireworks AI API key in your profile settings");
+        throw new Error("API key is not set");
+      }
+      
       const prompt = this.createAnalysisPrompt(userProfile);
       
       const response = await fetch(this.apiEndpoint, {

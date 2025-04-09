@@ -8,14 +8,16 @@ const LoginButton: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Button 
-      onClick={() => navigate('/profile')}
-      className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
-      size="lg"
-    >
-      <LogIn className="h-5 w-5" />
-      <span>Get Started</span>
-    </Button>
+    <div className="flex justify-center">
+      <Button 
+        onClick={() => navigate('/profile')}
+        className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
+        size="lg"
+      >
+        <LogIn className="h-5 w-5" />
+        <span>Get Started</span>
+      </Button>
+    </div>
   );
 };
 

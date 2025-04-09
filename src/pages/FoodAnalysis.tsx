@@ -23,8 +23,6 @@ interface FoodAnalysisResult {
   alternatives: string[];
 }
 
-const DEFAULT_API_KEY = "fw_3ZZ1r4VY7fXvXNbadtdTmcP4";
-
 const FoodAnalysis: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -32,7 +30,7 @@ const FoodAnalysis: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: hookToast } = useToast();
-  const { profile, addFoodAnalysis } = useUser();
+  const { profile, addFoodAnalysis, apiKey } = useUser();
   const navigate = useNavigate();
 
   const handleCapture = () => {
@@ -77,6 +75,12 @@ const FoodAnalysis: React.FC = () => {
   const analyzeImage = async () => {
     if (!image) return;
     
+    if (!apiKey) {
+      toast.error("Please set your Fireworks AI API key in your profile settings");
+      navigate('/profile');
+      return;
+    }
+    
     setIsAnalyzing(true);
     setProgress(0);
 
@@ -91,7 +95,7 @@ const FoodAnalysis: React.FC = () => {
     }, 500);
     
     try {
-      const fireworksService = new FireworksAIService();
+      const fireworksService = new FireworksAIService({ apiKey });
 
       const result = await fireworksService.analyzeFoodImage(image, profile);
       
@@ -170,6 +174,20 @@ const FoodAnalysis: React.FC = () => {
               Take a photo of your meal to analyze its PCOS compatibility
             </p>
             
+            {!apiKey && (
+              <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md mb-2">
+                <p className="text-sm font-medium">API key required</p>
+                <p className="text-xs">Please add your Fireworks AI API key in your profile settings to use this feature.</p>
+                <Button 
+                  onClick={() => navigate('/profile')}
+                  variant="link" 
+                  className="text-xs p-0 h-auto text-yellow-800 underline"
+                >
+                  Add API key
+                </Button>
+              </div>
+            )}
+            
             <div className="flex justify-center">
               <input 
                 type="file" 
@@ -185,6 +203,7 @@ const FoodAnalysis: React.FC = () => {
                   onClick={handleCapture} 
                   className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
                   size="lg"
+                  disabled={!apiKey}
                 >
                   <Camera className="h-5 w-5" />
                   Take Photo
@@ -212,7 +231,7 @@ const FoodAnalysis: React.FC = () => {
               <Button 
                 onClick={analyzeImage} 
                 className="w-full bg-pcos hover:bg-pcos-dark"
-                disabled={isAnalyzing}
+                disabled={isAnalyzing || !apiKey}
               >
                 Analyze Food
               </Button>

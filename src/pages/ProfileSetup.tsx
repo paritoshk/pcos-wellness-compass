@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUser, PCOSProfile } from '@/contexts/UserContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ApiKeyInput from "@/components/ApiKeyInput";
 
 // Common PCOS symptoms
 const pcosSymptoms = [
@@ -217,6 +217,15 @@ const ProfileSetup: React.FC = () => {
               </div>
             </div>
           )}
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>API Configuration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ApiKeyInput />
+            </CardContent>
+          </Card>
 
           <div className="flex justify-between mt-8">
             {currentStep > 1 ? (

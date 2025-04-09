@@ -7,6 +7,7 @@ import { Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
+import { useNavigate } from 'react-router-dom';
 
 interface ChatFoodAnalyzerProps {
   onAnalysisComplete: (analysis: FoodAnalysisItem) => void;
@@ -17,7 +18,8 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { profile, addFoodAnalysis } = useUser();
+  const { profile, addFoodAnalysis, apiKey } = useUser();
+  const navigate = useNavigate();
   
   const handleCapture = () => {
     fileInputRef.current?.click();
@@ -52,6 +54,12 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
   const analyzeImage = async () => {
     if (!image) return;
     
+    if (!apiKey) {
+      toast.error("Please set your Fireworks AI API key in your profile settings");
+      navigate('/profile');
+      return;
+    }
+    
     setIsAnalyzing(true);
     setProgress(0);
 
@@ -66,7 +74,7 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
     }, 500);
     
     try {
-      const fireworksService = new FireworksAIService();
+      const fireworksService = new FireworksAIService({ apiKey });
 
       const result = await fireworksService.analyzeFoodImage(image, profile);
       
@@ -116,6 +124,19 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
             Take a photo of your meal to analyze its PCOS compatibility
           </p>
           
+          {!apiKey && (
+            <div className="p-2 bg-yellow-50 text-yellow-800 rounded-md mb-2">
+              <p className="text-xs">You need an API key to use this feature. Visit your profile to add one.</p>
+              <Button 
+                onClick={() => navigate('/profile')}
+                variant="link" 
+                className="text-xs p-0 h-auto text-yellow-800 underline"
+              >
+                Add API key
+              </Button>
+            </div>
+          )}
+          
           <div className="flex justify-center">
             <input 
               type="file" 
@@ -130,7 +151,7 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
               <Button 
                 onClick={handleCapture} 
                 className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
-                disabled={isAnalyzing}
+                disabled={isAnalyzing || !apiKey}
               >
                 <Camera className="h-4 w-4" />
                 Take Photo
@@ -159,7 +180,7 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
             <Button 
               onClick={analyzeImage} 
               className="w-full bg-pcos hover:bg-pcos-dark" 
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || !apiKey}
             >
               Analyze Food
             </Button>
