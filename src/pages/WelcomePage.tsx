@@ -2,21 +2,27 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
-import LoginButton from '@/components/LoginButton';
-import { Utensils, Activity, FileText, HeartHandshake, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Utensils, Activity, FileText, HeartHandshake, Shield, LogIn } from 'lucide-react';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
-  const { isProfileComplete, profile } = useUser();
+  const { isAuthenticated, isProfileComplete } = useUser();
 
   useEffect(() => {
-    // If user has completed profile setup, redirect to chat
-    if (profile.name && isProfileComplete) {
-      navigate('/chat');
-    } else if (profile.name) {
-      navigate('/profile');
+    // If user is authenticated and has completed profile setup, redirect to chat
+    if (isAuthenticated) {
+      if (isProfileComplete) {
+        navigate('/chat');
+      } else {
+        navigate('/profile');
+      }
     }
-  }, [isProfileComplete, profile.name, navigate]);
+  }, [isAuthenticated, isProfileComplete, navigate]);
+
+  const handleGetStarted = () => {
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted">
@@ -67,9 +73,19 @@ const WelcomePage = () => {
             </div>
           </div>
           
-          <div className="pt-8 space-y-6 flex flex-col items-center">
-            <LoginButton />
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <div className="pt-8 flex flex-col items-center">
+            <div className="flex justify-center w-full">
+              <Button 
+                onClick={handleGetStarted}
+                className="bg-pcos hover:bg-pcos-dark flex items-center gap-2 px-8 py-6 text-lg"
+                size="lg"
+              >
+                <LogIn className="h-5 w-5" />
+                <span>Get Started</span>
+              </Button>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
               <p>Your data is secured and private</p>
             </div>

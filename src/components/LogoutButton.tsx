@@ -7,11 +7,11 @@ import { useUser } from "@/contexts/UserContext";
 
 const LogoutButton: React.FC = () => {
   const navigate = useNavigate();
-  const { updateProfile } = useUser();
+  const { logout } = useUser();
   
   const handleLogout = () => {
-    // Reset user profile completed setup status
-    updateProfile({ completedSetup: false });
+    // Properly logout using our authentication system
+    logout();
     // Navigate to welcome page
     navigate('/');
   };

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Camera, X, Share2 } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
@@ -75,11 +75,7 @@ const FoodAnalysis: React.FC = () => {
   const analyzeImage = async () => {
     if (!image) return;
     
-    if (!apiKey) {
-      toast.error("Please set your Fireworks AI API key in your profile settings");
-      navigate('/profile');
-      return;
-    }
+    // API key is now loaded from environment variables, so we don't need to check for it here
     
     setIsAnalyzing(true);
     setProgress(0);
@@ -116,52 +112,48 @@ const FoodAnalysis: React.FC = () => {
   };
 
   const saveToHistory = () => {
-    if (!analysisResult || !image) return;
+    if (!analysisResult) {
+      toast.error("No analysis result to save");
+      return;
+    }
     
-    const newAnalysisItem: FoodAnalysisItem = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      foodName: analysisResult.foodName,
-      imageUrl: image,
-      pcosCompatibility: analysisResult.pcosCompatibility,
-      nutritionalInfo: { ...analysisResult.nutritionalInfo },
-      recommendation: analysisResult.recommendation,
-      alternatives: [...analysisResult.alternatives]
-    };
+    if (!image) {
+      toast.error("Missing image data");
+      return;
+    }
     
-    addFoodAnalysis(newAnalysisItem);
-    toast.success("Analysis saved to history");
-    
-    navigate('/history');
-  };
-
-  const shareWithChat = () => {
-    if (!analysisResult) return;
-    
-    if (image) {
+    try {
+      // Create a properly structured food analysis item
       const newAnalysisItem: FoodAnalysisItem = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
-        foodName: analysisResult.foodName,
+        foodName: analysisResult.foodName || 'Unknown Food',
         imageUrl: image,
-        pcosCompatibility: analysisResult.pcosCompatibility,
-        nutritionalInfo: { ...analysisResult.nutritionalInfo },
-        recommendation: analysisResult.recommendation,
-        alternatives: [...analysisResult.alternatives]
+        pcosCompatibility: analysisResult.pcosCompatibility || 0,
+        nutritionalInfo: {
+          carbs: analysisResult.nutritionalInfo?.carbs || 0,
+          protein: analysisResult.nutritionalInfo?.protein || 0,
+          fats: analysisResult.nutritionalInfo?.fats || 0,
+          glycemicLoad: analysisResult.nutritionalInfo?.glycemicLoad || 'Unknown',
+          inflammatoryScore: analysisResult.nutritionalInfo?.inflammatoryScore || 'Unknown'
+        },
+        recommendation: analysisResult.recommendation || '',
+        alternatives: Array.isArray(analysisResult.alternatives) ? analysisResult.alternatives : []
       };
       
+      console.log('Saving analysis to history:', newAnalysisItem);
       addFoodAnalysis(newAnalysisItem);
+      toast.success("Analysis saved to history");
+      
+      // Navigate to history page after successful save
+      navigate('/history');
+    } catch (error) {
+      console.error('Error saving to history:', error);
+      toast.error("Failed to save analysis to history");
     }
-    
-    navigate('/chat', { 
-      state: { 
-        foodAnalysis: {
-          ...analysisResult,
-          imageUrl: image
-        } 
-      }
-    });
   };
+
+  // Share with chat functionality removed as it was not working properly
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
@@ -174,19 +166,7 @@ const FoodAnalysis: React.FC = () => {
               Take a photo of your meal to analyze its PCOS compatibility
             </p>
             
-            {!apiKey && (
-              <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md mb-2">
-                <p className="text-sm font-medium">API key required</p>
-                <p className="text-xs">Please add your Fireworks AI API key in your profile settings to use this feature.</p>
-                <Button 
-                  onClick={() => navigate('/profile')}
-                  variant="link" 
-                  className="text-xs p-0 h-auto text-yellow-800 underline"
-                >
-                  Add API key
-                </Button>
-              </div>
-            )}
+            {/* API key is now loaded from environment variables */}
             
             <div className="flex justify-center">
               <input 
@@ -322,15 +302,7 @@ const FoodAnalysis: React.FC = () => {
             <Button variant="outline" onClick={clearImage}>
               Analyze Another Food
             </Button>
-            <div className="space-x-2">
-              <Button 
-                variant="outline" 
-                className="border-pcos text-pcos hover:bg-pcos/10"
-                onClick={shareWithChat}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share in Chat
-              </Button>
+            <div>
               <Button 
                 className="bg-pcos hover:bg-pcos-dark"
                 onClick={saveToHistory}
