@@ -7,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUser, PCOSProfile } from '@/contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ApiKeyInput from "@/components/ApiKeyInput";
 
 // Common PCOS symptoms
 const pcosSymptoms = [
@@ -130,7 +129,7 @@ const ProfileSetup: React.FC = () => {
                           updateFormData('symptoms', formData.symptoms?.filter(s => s !== symptom.label) || []);
                         }
                       }}
-                      className="border-pcos data-[state=checked]:bg-pcos data-[state=checked]:border-pcos"
+                      className="border-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:border-nari-primary"
                     />
                     <label htmlFor={symptom.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {symptom.label}
@@ -151,15 +150,15 @@ const ProfileSetup: React.FC = () => {
                   className="flex flex-col space-y-1"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="insulin-yes" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="yes" id="insulin-yes" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="insulin-yes">Yes</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="insulin-no" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="no" id="insulin-no" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="insulin-no">No</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="unknown" id="insulin-unknown" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="unknown" id="insulin-unknown" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="insulin-unknown">I don't know</Label>
                   </div>
                 </RadioGroup>
@@ -173,15 +172,15 @@ const ProfileSetup: React.FC = () => {
                   className="flex flex-col space-y-1"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="maintain" id="maintain" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="maintain" id="maintain" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="maintain">Maintain current weight</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="lose" id="lose" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="lose" id="lose" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="lose">Lose weight</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="gain" id="gain" className="border-pcos text-pcos" />
+                    <RadioGroupItem value="gain" id="gain" className="border-nari-accent text-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:text-white data-[state=checked]:border-nari-primary" />
                     <Label htmlFor="gain">Gain weight</Label>
                   </div>
                 </RadioGroup>
@@ -207,7 +206,7 @@ const ProfileSetup: React.FC = () => {
                           updateFormData('dietaryPreferences', formData.dietaryPreferences?.filter(p => p !== option.label) || []);
                         }
                       }}
-                      className="border-pcos data-[state=checked]:bg-pcos data-[state=checked]:border-pcos"
+                      className="border-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:border-nari-primary"
                     />
                     <label htmlFor={option.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {option.label}
@@ -218,21 +217,12 @@ const ProfileSetup: React.FC = () => {
             </div>
           )}
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>API Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ApiKeyInput />
-            </CardContent>
-          </Card>
-
           <div className="flex justify-between mt-8">
             {currentStep > 1 ? (
               <Button 
                 onClick={handlePrevious} 
                 variant="outline"
-                className="border-pcos text-pcos hover:bg-pcos/10"
+                className="border-nari-accent text-nari-accent hover:bg-nari-accent/10"
               >
                 Back
               </Button>
@@ -240,7 +230,7 @@ const ProfileSetup: React.FC = () => {
               <Button 
                 onClick={() => navigate('/')} 
                 variant="outline"
-                className="border-pcos text-pcos hover:bg-pcos/10"
+                className="border-nari-accent text-nari-accent hover:bg-nari-accent/10"
               >
                 Cancel
               </Button>
@@ -249,14 +239,14 @@ const ProfileSetup: React.FC = () => {
             {currentStep < 4 ? (
               <Button 
                 onClick={handleNext}
-                className="bg-pcos hover:bg-pcos-dark"
+                className="bg-nari-primary hover:bg-nari-primary/90"
               >
                 Next
               </Button>
             ) : (
               <Button 
                 onClick={handleComplete}
-                className="bg-pcos hover:bg-pcos-dark"
+                className="bg-nari-primary hover:bg-nari-primary/90"
               >
                 Complete
               </Button>

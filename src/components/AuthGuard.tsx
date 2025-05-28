@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 
 interface AuthGuardProps {
@@ -8,18 +7,23 @@ interface AuthGuardProps {
 }
 
 const ManualAuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { profile, updateProfile } = useUser();
-  
-  // Check if user has a name in the profile
-  if (profile.name === '') {
-    // Auto-create a guest profile instead of redirecting
-    updateProfile({
-      name: "Guest User",
-      completedSetup: true
-    });
+  const { isProfileComplete } = useUser();
+  const location = useLocation();
+
+  // For routes protected by this guard, if profile is not complete, redirect to profile setup.
+  // The Welcome page (/) is not protected by this version of the guard.
+  // ProfileSetup page will also not be protected by this to allow access.
+  if (!isProfileComplete) {
+    // Allow access to /profile even if not complete yet.
+    // Other routes (chat, analyze, etc.) will be implicitly protected by Layout requiring profile completion.
+    // This specific guard instance in App.tsx wraps Layout, so this check is for Layout children.
+    if (location.pathname !== '/profile') {
+        // Redirect to profile page to complete setup if trying to access other protected routes.
+        // If they are already on /profile, let them stay.
+        return <Navigate to="/profile" state={{ from: location }} replace />;
+    }
   }
 
-  // Always render children since we create a guest profile if needed
   return <>{children}</>;
 };
 

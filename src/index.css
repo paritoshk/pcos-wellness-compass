@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -5,35 +6,35 @@
 
 @layer base {
   :root {
-    --background: 260 60% 99%;
-    --foreground: 260 10% 10%;
+    --background: 204 20% 98%; /* Nari Secondary: #F7F9FA */
+    --foreground: 210 12% 23%; /* Nari Text Main: #333D47 */
 
     --card: 0 0% 100%;
-    --card-foreground: 260 10% 10%;
+    --card-foreground: 210 12% 23%; /* Nari Text Main */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 260 10% 10%;
+    --popover-foreground: 210 12% 23%; /* Nari Text Main */
 
-    --primary: 260 100% 65%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 179 35% 45%;        /* Nari Primary: #4A9D9C */
+    --primary-foreground: 0 0% 100%; /* White text on Nari Primary */
 
-    --secondary: 180 50% 53%;
-    --secondary-foreground: 180 50% 10%;
+    --secondary: 4 100% 69%;       /* Nari Accent: #FF7062 */
+    --secondary-foreground: 0 0% 100%; /* White text on Nari Accent */
 
-    --muted: 260 20% 96%;
-    --muted-foreground: 260 10% 40%;
+    --muted: 210 10% 60%;         /* Nari Text Muted: #768595 (approx HSL) */
+    --muted-foreground: 210 10% 90%; /* Lighter text for on muted background */
 
-    --accent: 340 100% 80%;
-    --accent-foreground: 340 50% 10%;
+    --accent: 4 100% 69%;           /* Nari Accent: #FF7062 */
+    --accent-foreground: 0 0% 100%;  /* White text on Nari Accent */
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 260 30% 90%;
-    --input: 260 30% 90%;
-    --ring: 260 100% 65%;
+    --border: 204 10% 85%; /* Adjusted border color */
+    --input: 204 10% 90%;  /* Adjusted input background */
+    --ring: 179 35% 45%;   /* Nari Primary for focus rings */
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 260 10% 10%;
@@ -46,33 +47,33 @@
   }
 
   .dark {
-    --background: 260 15% 10%;
-    --foreground: 260 10% 95%;
+    --background: 210 12% 10%; /* Darker background */
+    --foreground: 204 20% 98%; /* Nari Secondary (Light Gray) for text */
 
-    --card: 260 15% 15%;
-    --card-foreground: 260 10% 95%;
+    --card: 210 12% 15%;
+    --card-foreground: 204 20% 98%; 
 
-    --popover: 260 15% 15%;
-    --popover-foreground: 260 10% 95%;
+    --popover: 210 12% 15%;
+    --popover-foreground: 204 20% 98%;
 
-    --primary: 260 100% 70%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 179 35% 45%; 
+    --primary-foreground: 0 0% 100%; 
 
-    --secondary: 180 50% 53%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 4 100% 69%; 
+    --secondary-foreground: 0 0% 100%; 
 
-    --muted: 260 15% 20%;
-    --muted-foreground: 260 10% 70%;
+    --muted: 210 10% 30%;
+    --muted-foreground: 210 10% 70%;
 
-    --accent: 340 100% 80%;
+    --accent: 4 100% 69%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 260 15% 25%;
-    --input: 260 15% 25%;
-    --ring: 260 100% 70%;
+    --border: 210 12% 25%;
+    --input: 210 12% 20%;
+    --ring: 179 35% 45%;
     
     --sidebar-background: 260 15% 15%;
     --sidebar-foreground: 260 10% 95%;
@@ -92,13 +93,27 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: theme('fontFamily.sans'); /* Sets default to Inter */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme('fontFamily.poppins');
   }
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-pcos to-pcos-teal;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-nari-primary to-nari-accent;
 }
 
-.pcos-input-focus {
-  @apply focus-visible:ring-2 focus-visible:ring-pcos focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-offset-background;
+/* Custom focus style for inputs using Nari AI accent color */
+.pcos-input-focus:focus-visible {
+  outline: 2px solid #FF7062 !important; /* Nari Accent */
+  outline-offset: 2px;
+  border-color: transparent !important; /* Hide default browser focus border if any */
 }
+
+/* Removing old .pcos class if it existed */
+/* .pcos {
+  background-color: #C679C0; 
+  color: white; 
+} */

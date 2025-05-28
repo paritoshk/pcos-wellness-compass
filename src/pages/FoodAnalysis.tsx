@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Camera, X, Share2 } from "lucide-react";
+import { Camera, X, Share2, Utensils, Loader2, MessageSquareText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
@@ -30,7 +30,7 @@ const FoodAnalysis: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: hookToast } = useToast();
-  const { profile, addFoodAnalysis, apiKey } = useUser();
+  const { profile, addFoodAnalysis } = useUser();
   const navigate = useNavigate();
 
   const handleCapture = () => {
@@ -72,46 +72,32 @@ const FoodAnalysis: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const analyzeImage = async () => {
+  const analyzeFood = async () => {
     if (!image) return;
     
-    if (!apiKey) {
-      toast.error("Please set your Fireworks AI API key in your profile settings");
-      navigate('/profile');
-      return;
-    }
-    
     setIsAnalyzing(true);
-    setProgress(0);
-
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 500);
-    
     try {
-      const fireworksService = new FireworksAIService({ apiKey });
-
+      const fireworksService = new FireworksAIService();
       const result = await fireworksService.analyzeFoodImage(image, profile);
       
       if (result) {
+        // Create food analysis item
+        const analysisItem: FoodAnalysisItem = {
+          id: crypto.randomUUID(),
+          date: new Date().toISOString(),
+          imageUrl: image,
+          ...result
+        };
+        
+        // Add to history
+        addFoodAnalysis(analysisItem);
         setAnalysisResult(result);
-        toast.success("Analysis complete!");
-      } else {
-        toast.error("Failed to analyze the image. Please try again.");
       }
-    } catch (error) {
-      console.error("Analysis error:", error);
-      toast.error("An error occurred during analysis");
+    } catch (error: any) {
+      console.error('Analysis failed:', error);
+      toast.error(error.message || "Failed to analyze food");
     } finally {
-      clearInterval(progressInterval);
-      setProgress(100);
-      setTimeout(() => setIsAnalyzing(false), 500);
+      setIsAnalyzing(false);
     }
   };
 
@@ -174,20 +160,6 @@ const FoodAnalysis: React.FC = () => {
               Take a photo of your meal to analyze its PCOS compatibility
             </p>
             
-            {!apiKey && (
-              <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md mb-2">
-                <p className="text-sm font-medium">API key required</p>
-                <p className="text-xs">Please add your Fireworks AI API key in your profile settings to use this feature.</p>
-                <Button 
-                  onClick={() => navigate('/profile')}
-                  variant="link" 
-                  className="text-xs p-0 h-auto text-yellow-800 underline"
-                >
-                  Add API key
-                </Button>
-              </div>
-            )}
-            
             <div className="flex justify-center">
               <input 
                 type="file" 
@@ -197,55 +169,39 @@ const FoodAnalysis: React.FC = () => {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              
-              {!image ? (
-                <Button 
-                  onClick={handleCapture} 
-                  className="bg-pcos hover:bg-pcos-dark flex items-center gap-2"
-                  size="lg"
-                  disabled={!apiKey}
-                >
-                  <Camera className="h-5 w-5" />
-                  Take Photo
-                </Button>
-              ) : (
-                <div className="relative w-full max-w-sm">
-                  <img 
-                    src={image} 
-                    alt="Food to analyze" 
-                    className="w-full rounded-md shadow-md" 
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background"
-                    onClick={clearImage}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-nari-primary hover:bg-nari-primary/90 w-full sm:w-auto"
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Take Photo
+              </Button>
             </div>
             
-            {image && !analysisResult && !isAnalyzing && (
-              <Button 
-                onClick={analyzeImage} 
-                className="w-full bg-pcos hover:bg-pcos-dark"
-                disabled={isAnalyzing || !apiKey}
-              >
-                Analyze Food
-              </Button>
-            )}
-            
-            {isAnalyzing && (
-              <div className="space-y-2">
-                <p className="text-center text-sm text-muted-foreground">
-                  Analyzing your food...
-                </p>
-                <Progress 
-                  value={progress} 
-                  className="h-2"
+            {image && (
+              <div className="flex flex-col items-center space-y-4">
+                <img 
+                  src={image} 
+                  alt="Food to analyze" 
+                  className="max-w-xs rounded-lg shadow-md"
                 />
+                <Button 
+                  onClick={analyzeFood}
+                  disabled={isAnalyzing}
+                  className="bg-nari-primary hover:bg-nari-primary/90"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Utensils className="h-4 w-4 mr-2" />
+                      Analyze Food
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </div>
@@ -319,20 +275,24 @@ const FoodAnalysis: React.FC = () => {
           </Card>
           
           <div className="flex justify-between">
-            <Button variant="outline" onClick={clearImage}>
+            <Button 
+              variant="outline"
+              className="border-nari-accent text-nari-accent hover:bg-nari-accent/10"
+              onClick={clearImage}
+            >
               Analyze Another Food
             </Button>
             <div className="space-x-2">
               <Button 
-                variant="outline" 
-                className="border-pcos text-pcos hover:bg-pcos/10"
+                variant="outline"
+                className="bg-nari-primary hover:bg-nari-primary/90"
                 onClick={shareWithChat}
               >
-                <Share2 className="h-4 w-4 mr-2" />
+                <MessageSquareText className="mr-2 h-4 w-4" />
                 Share in Chat
               </Button>
               <Button 
-                className="bg-pcos hover:bg-pcos-dark"
+                className="bg-nari-primary hover:bg-nari-primary/90"
                 onClick={saveToHistory}
               >
                 Save to History

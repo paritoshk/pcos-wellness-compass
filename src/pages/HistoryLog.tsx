@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Camera, ChevronDown, ChevronUp } from "lucide-react";
+import { MessageCircle, Camera, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -91,7 +90,7 @@ const HistoryLog: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">History Log</h1>
+      <h1 className="text-3xl font-poppins font-semibold text-nari-text-main">Your Wellness History</h1>
       
       <Tabs defaultValue="analyses" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -195,10 +194,10 @@ const HistoryLog: React.FC = () => {
                         <Button 
                           variant="outline"
                           size="sm"
-                          className="border-pcos text-pcos hover:bg-pcos/10"
+                          className="border-nari-accent text-nari-accent hover:bg-nari-accent/10"
                           onClick={() => handleShareInChat(analysis)}
                         >
-                          Share in Chat
+                          <Edit3 className="mr-2 h-4 w-4" /> Edit
                         </Button>
                         <Button 
                           variant="outline"

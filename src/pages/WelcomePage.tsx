@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
@@ -7,21 +6,20 @@ import { Utensils, Activity, FileText, HeartHandshake, Shield } from 'lucide-rea
 
 const WelcomePage = () => {
   const navigate = useNavigate();
-  const { isProfileComplete, profile } = useUser();
+  const { isProfileComplete } = useUser();
 
   useEffect(() => {
-    // If user has completed profile setup, redirect to chat
-    if (profile.name && isProfileComplete) {
+    // If user has ALREADY completed profile setup (e.g., returning user), redirect to chat
+    if (isProfileComplete) {
       navigate('/chat');
-    } else if (profile.name) {
-      navigate('/profile');
     }
-  }, [isProfileComplete, profile.name, navigate]);
+    // No other automatic navigation. User must click LoginButton to proceed to /profile if new.
+  }, [isProfileComplete, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted">
       <header className="w-full p-6">
-        <h1 className="text-3xl font-bold gradient-text">PCOS Wellness Compass</h1>
+        <h1 className="text-3xl font-bold gradient-text">Nari AI</h1>
       </header>
       
       <div className="flex-1 flex flex-col justify-center items-center px-6 py-12">
@@ -35,32 +33,32 @@ const WelcomePage = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-card backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-pcos/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-pcos/20">
-                <Utensils className="h-8 w-8 text-pcos" />
+              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
+                <Utensils className="h-8 w-8 text-nari-primary" />
               </div>
               <h3 className="font-semibold text-xl">Food Analysis</h3>
               <p className="text-sm text-muted-foreground mt-2">Instantly analyze meals for PCOS compatibility</p>
             </div>
             
             <div className="bg-card backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-pcos/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-pcos/20">
-                <Activity className="h-8 w-8 text-pcos" />
+              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
+                <Activity className="h-8 w-8 text-nari-primary" />
               </div>
               <h3 className="font-semibold text-xl">Personalized Advice</h3>
               <p className="text-sm text-muted-foreground mt-2">Get recommendations tailored to your PCOS profile</p>
             </div>
             
             <div className="bg-card backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-pcos/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-pcos/20">
-                <FileText className="h-8 w-8 text-pcos" />
+              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
+                <FileText className="h-8 w-8 text-nari-primary" />
               </div>
               <h3 className="font-semibold text-xl">Food Tracking</h3>
               <p className="text-sm text-muted-foreground mt-2">Log meals and monitor your progress</p>
             </div>
             
             <div className="bg-card backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-pcos/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-pcos/20">
-                <HeartHandshake className="h-8 w-8 text-pcos" />
+              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
+                <HeartHandshake className="h-8 w-8 text-nari-primary" />
               </div>
               <h3 className="font-semibold text-xl">Expert Connect</h3>
               <p className="text-sm text-muted-foreground mt-2">Connect with PCOS nutritionists</p>

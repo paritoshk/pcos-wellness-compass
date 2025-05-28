@@ -1,5 +1,5 @@
-
 import { toast } from "sonner";
+import { PCOSProfile } from '@/contexts/UserContext';
 
 interface FireworksAIConfig {
   model?: string;
@@ -26,15 +26,18 @@ export class FireworksAIService {
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
-    this.apiKey = config.apiKey || "";
+    console.log('Vite ENV variables available in FireworksAIService:', import.meta.env);
+    // Use environment variable first, fallback to config
+    this.apiKey = import.meta.env.VITE_FIREWORKS_API_KEY || config.apiKey || "";
+    console.log('Selected API Key:', this.apiKey ? 'Key Present (masked)' : 'Key NOT Present');
     this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
   }
 
   async analyzeFoodImage(imageBase64: string, userProfile: any): Promise<AnalysisResult | null> {
     try {
       if (!this.apiKey) {
-        toast.error("Please set your Fireworks AI API key in your profile settings");
-        throw new Error("API key is not set");
+        toast.error("Fireworks AI API key is not configured. Please contact support.");
+        throw new Error("API key is not configured");
       }
       
       const prompt = this.createAnalysisPrompt(userProfile);
@@ -152,5 +155,57 @@ For each food identified, please provide detailed analysis in JSON format with t
     }
 
     return result;
+  }
+
+  async getChatResponse(conversationHistory: Array<{role: 'user' | 'assistant', content: string}>, userProfile: PCOSProfile): Promise<string | null> {
+    try {
+      if (!this.apiKey) {
+        toast.error("Fireworks AI API key is not configured. Please contact support.");
+        throw new Error("API key is not configured");
+      }
+
+      const systemMessage = `You are Ama, a friendly and empathetic PCOS Wellness Assistant. Your goal is to provide helpful information, support, and guidance to users managing Polycystic Ovary Syndrome (PCOS). Personalize your responses based on the user's profile where appropriate. User's name: ${userProfile.name || 'there'}. User's reported symptoms: ${userProfile.symptoms?.join(', ') || 'not specified'}.`;
+
+      const messagesForAPI = [
+        { role: 'system', content: systemMessage },
+        ...conversationHistory
+      ];
+
+      const response = await fetch(this.apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: this.model, // Or a model more suited for chat if different from food analysis
+          max_tokens: 500, // Adjust as needed for chat
+          temperature: 0.7, // Standard temperature for chat
+          top_p: 0.95,
+          messages: messagesForAPI,
+          // No specific response_format for plain text, default is usually fine
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Fireworks AI chat error response:", errorData);
+        throw new Error(errorData.message || "Failed to get chat response from AI");
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+        return data.choices[0].message.content.trim();
+      } else {
+        console.error("Unexpected response structure from Fireworks AI:", data);
+        throw new Error("Received an unexpected response structure from the AI.");
+      }
+
+    } catch (error: any) {
+      console.error("Chat response error:", error);
+      toast.error("AI chat error: " + (error.message || "Unknown error"));
+      return "I am having trouble connecting to my brain right now. Please try again in a moment."; // Fallback friendly message
+    }
   }
 }
