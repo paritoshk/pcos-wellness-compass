@@ -87,10 +87,12 @@ export class FireworksAIService {
       const parsedResult = JSON.parse(content);
       
       return this.formatAnalysisResult(parsedResult);
-    } catch (error: any) {
-      console.error("Food analysis error:", error);
-      toast.error("Failed to analyze food image: " + (error.message || "Unknown error"));
-      return null;
+    } catch (error: unknown) {
+      console.error("Error analyzing food image:", error);
+      let errorMessage = "Failed to analyze image. Please try again.";
+      if (error instanceof Error) errorMessage = error.message;
+      else if (typeof error === 'string') errorMessage = error;
+      throw new Error(errorMessage);
     }
   }
 
@@ -202,10 +204,12 @@ For each food identified, please provide detailed analysis in JSON format with t
         throw new Error("Received an unexpected response structure from the AI.");
       }
 
-    } catch (error: any) {
-      console.error("Chat response error:", error);
-      toast.error("AI chat error: " + (error.message || "Unknown error"));
-      return "I am having trouble connecting to my brain right now. Please try again in a moment."; // Fallback friendly message
+    } catch (error: unknown) {
+      console.error("Error processing stream:", error);
+      let errorMessage = "Error processing AI response.";
+      if (error instanceof Error) errorMessage = error.message;
+      else if (typeof error === 'string') errorMessage = error;
+      throw new Error(errorMessage);
     }
   }
 }

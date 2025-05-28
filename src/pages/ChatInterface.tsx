@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Send, Camera } from "lucide-react";
-import { useUser, PCOSProfile } from '@/contexts/UserContext';
+import { useUser, PCOSProfile, FoodAnalysisItem } from '@/contexts/UserContext';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
@@ -16,10 +16,10 @@ interface Message {
   content: string;
   timestamp: Date;
   type?: 'text' | 'food-analysis';
-  foodAnalysis?: any;
+  foodAnalysis?: FoodAnalysisItem;
 }
 
-const getFoodAnalysisResponse = (foodAnalysis: any): string => {
+const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
   const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : 
                             foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
   
@@ -40,13 +40,16 @@ const getFoodAnalysisResponse = (foodAnalysis: any): string => {
 
 const CHAT_MESSAGES_STORAGE_KEY = 'pcosChatMessages';
 
+interface StoredMessage extends Omit<Message, 'timestamp'> {
+  timestamp: string;
+}
+
 const ChatInterface: React.FC = () => {
   const { profile } = useUser();
   const [messages, setMessages] = useState<Message[]>(() => {
     const savedMessages = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
     if (savedMessages) {
-      // Parse and revive Date objects for timestamps
-      return JSON.parse(savedMessages).map((msg: any) => ({...msg, timestamp: new Date(msg.timestamp)}));
+      return JSON.parse(savedMessages).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)}));
     }
     return [];
   });
@@ -63,11 +66,9 @@ const ChatInterface: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (messages.length > 0) { // Only save if there are messages (avoids clearing on initial load if [])
+    if (messages.length > 0) {
         localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
     } else {
-        // Optional: if messages array becomes empty, remove from storage
-        // localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY);
     }
   }, [messages]);
 
@@ -81,12 +82,11 @@ const ChatInterface: React.FC = () => {
         };
       setMessages([initialGreeting]);
     } else if (messages.length === 0 && !profile.name && localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)){
-      // If no profile name yet, but messages in localStorage (e.g. user had a guest session, then logged in)
-      // We let localStorage rehydration handle it. If storage is also empty, no greeting until profile loads.
     }
 
-    if (location.state?.foodAnalysis) {
-      const foodAnalysis = location.state.foodAnalysis;
+    const foodAnalysisFromState = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
+    if (foodAnalysisFromState) {
+      const foodAnalysis = foodAnalysisFromState;
       const userFoodMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
@@ -109,7 +109,7 @@ const ChatInterface: React.FC = () => {
       }, 1500);
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, profile.name]);
+  }, [location.state?.foodAnalysis, profile.name, messages.length, location.state]);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
@@ -159,7 +159,7 @@ const ChatInterface: React.FC = () => {
     }
   };
   
-  const handleFoodAnalysis = (foodAnalysis: any) => {
+  const handleFoodAnalysis = (foodAnalysis: FoodAnalysisItem) => {
     setShowFoodAnalyzer(false);
     
     const userMessage: Message = {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Camera, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
-import { useUser } from '@/contexts/UserContext';
+import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
 // Mock data for demonstration
@@ -80,7 +80,7 @@ const HistoryLog: React.FC = () => {
   const { foodAnalysisHistory } = useUser();
   const navigate = useNavigate();
 
-  const handleShareInChat = (analysis: any) => {
+  const handleShareInChat = (analysis: FoodAnalysisItem) => {
     navigate('/chat', { 
       state: { 
         foodAnalysis: analysis

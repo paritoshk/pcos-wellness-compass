@@ -67,9 +67,15 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
         
         toast.success("Food analysis complete!");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Analysis failed:', error);
-      toast.error(error.message || "Failed to analyze food");
+      let errorMessage = "Failed to analyze food";
+      if (error instanceof Error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }

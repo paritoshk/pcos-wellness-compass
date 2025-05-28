@@ -61,7 +61,7 @@ const ProfileSetup: React.FC = () => {
     navigate('/chat');
   };
 
-  const updateFormData = (key: keyof PCOSProfile, value: any) => {
+  const updateFormData = (key: keyof PCOSProfile, value: PCOSProfile[keyof PCOSProfile]) => {
     setFormData(prev => ({
       ...prev,
       [key]: value
@@ -113,7 +113,7 @@ const ProfileSetup: React.FC = () => {
 
           {currentStep === 2 && (
             <div className="space-y-4">
-              <p className="text-muted-foreground mb-2">
+              <p className="text-nari-text-main/80 mb-2">
                 Select the symptoms that apply to you:
               </p>
               <div className="grid grid-cols-1 gap-3">
@@ -190,7 +190,7 @@ const ProfileSetup: React.FC = () => {
 
           {currentStep === 4 && (
             <div className="space-y-4">
-              <p className="text-muted-foreground mb-2">
+              <p className="text-nari-text-main/80 mb-2">
                 Select any dietary preferences that apply to you:
               </p>
               <div className="grid grid-cols-1 gap-3">
