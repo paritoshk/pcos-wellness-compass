@@ -157,7 +157,10 @@ const FoodAnalysis: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Food Analysis</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-poppins font-semibold text-foreground mb-2">Analyze Food</h1>
+        <p className="text-muted-foreground">Upload a photo to get PCOS-friendly food analysis</p>
+      </div>
       
       <Card className="mb-6">
         <CardContent className="p-6">

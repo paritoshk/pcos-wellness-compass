@@ -77,10 +77,10 @@ const ExpertConnect: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-2">Expert Connect</h1>
-        <p className="text-muted-foreground mb-6">
-          Get personalized guidance from healthcare professionals specialized in PCOS
-        </p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-poppins font-semibold text-foreground mb-2">Expert Connect</h1>
+          <p className="text-muted-foreground">Get personalized guidance from healthcare professionals specialized in PCOS</p>
+        </div>
         
         <div className="grid grid-cols-1 gap-6">
           {experts.map(expert => (

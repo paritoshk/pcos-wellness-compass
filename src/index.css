@@ -22,7 +22,7 @@
     --secondary-foreground: 0 0% 100%; /* White text on Nari Accent */
 
     --muted: 210 10% 60%;         /* Nari Text Muted: #768595 (approx HSL) */
-    --muted-foreground: 210 10% 90%; /* Lighter text for on muted background */
+    --muted-foreground: 210 10% 45%; /* Lighter text for on muted background - MADE DARKER */
 
     --accent: 4 100% 69%;           /* Nari Accent: #FF7062 */
     --accent-foreground: 0 0% 100%;  /* White text on Nari Accent */
@@ -99,6 +99,26 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: theme('fontFamily.poppins');
   }
+}
+
+@layer components {
+  .text-foreground:hover {
+    color: hsl(var(--foreground));
+  }
+  .text-muted-foreground:hover {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Custom Tab Styles */
+  /* .tabs-trigger:hover:not([data-state='active']) {
+    background-color: hsl(var(--primary) / 0.1); 
+    color: hsl(var(--foreground)); 
+  }
+
+  .tabs-trigger[data-state='active']:hover {
+    background-color: hsl(var(--background)); 
+    color: hsl(var(--foreground)); 
+  } */
 }
 
 .gradient-text {

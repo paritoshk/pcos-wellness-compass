@@ -67,7 +67,11 @@ const Layout = () => {
             <Button 
               key={item.name}
               variant="ghost" 
-              className={`w-full justify-start ${isActive(item.path) ? 'bg-nari-primary/10 text-nari-primary' : 'text-nari-text-main hover:bg-nari-primary/5'}`}
+              className={`w-full justify-start ${
+                isActive(item.path) 
+                  ? 'bg-nari-primary text-white font-semibold' 
+                  : 'text-nari-text hover:bg-nari-primary/10 hover:text-nari-text'
+              }`}
               onClick={() => navigate(item.path)}
             >
               <item.icon className="mr-2 h-5 w-5" />
@@ -108,7 +112,11 @@ const Layout = () => {
                   <Button 
                     key={item.name}
                     variant="ghost" 
-                    className={`w-full justify-start ${isActive(item.path) ? 'bg-nari-primary/10 text-nari-primary' : 'text-nari-text-main hover:bg-nari-primary/5'}`}
+                    className={`w-full justify-start ${
+                      isActive(item.path) 
+                        ? 'bg-nari-primary text-white font-semibold' 
+                        : 'text-nari-text hover:bg-nari-primary/10 hover:text-nari-text'
+                    }`}
                     onClick={() => { navigate(item.path); setIsSheetOpen(false); }}
                   >
                     <item.icon className="mr-2 h-5 w-5" />

@@ -78,7 +78,7 @@ const ChatInterface: React.FC = () => {
       const initialGreeting: Message = {
           id: '1',
           role: 'assistant',
-          content: `Hi ${profile.name}! I'm Ama, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
+          content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
           timestamp: new Date()
         };
       setMessages([initialGreeting]);
@@ -230,6 +230,11 @@ const ChatInterface: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full p-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-poppins font-semibold text-foreground mb-2">Chat with Nari</h1>
+        <p className="text-muted-foreground">Your personal PCOS wellness assistant</p>
+      </div>
+      
       {showFoodAnalyzer && (
         <ChatFoodAnalyzer onAnalysisComplete={handleFoodAnalysis} />
       )}

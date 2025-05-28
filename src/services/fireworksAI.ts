@@ -23,8 +23,6 @@ interface AnalysisResult {
 export class FireworksAIService {
   private apiKey: string;
   private model: string;
-  private chatModel: string;
-  private foodModel: string;
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
@@ -36,9 +34,8 @@ export class FireworksAIService {
     console.log("[NariAI_FireworksService] Constructor: Final effective API Key: ", 
                 this.apiKey ? `Present (length: ${this.apiKey.length})` : "MISSING or empty");
 
-    this.foodModel = config.model || "accounts/fireworks/models/firellava-13b";
-    this.chatModel = config.model || "accounts/fireworks/models/llama-v3-8b-instruct"; 
-    console.log(`[NariAI_FireworksService] Models set: Food='${this.foodModel}', Chat='${this.chatModel}'`);
+    this.model = config.model || "accounts/fireworks/models/llama4-maverick-instruct-basic";
+    console.log(`[NariAI_FireworksService] Model set: '${this.model}'`);
   }
 
   async analyzeFoodImage(imageBase64: string, userProfile: Partial<PCOSProfile>): Promise<AnalysisResult | null> {
@@ -63,7 +60,7 @@ export class FireworksAIService {
           "Authorization": `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: this.foodModel,
+          model: this.model,
           max_tokens: 1024,
           temperature: 0.4,
           top_p: 0.95,
@@ -186,7 +183,7 @@ For each food identified, please provide detailed analysis in JSON format with t
     }
 
     try {
-      const systemMessage = `You are Ama, a friendly and empathetic PCOS Wellness Assistant. Your goal is to provide helpful information, support, and guidance to users managing Polycystic Ovary Syndrome (PCOS). Personalize your responses based on the user's profile where appropriate. User's name: ${userProfile.name || 'there'}. User's reported symptoms: ${userProfile.symptoms?.join(', ') || 'not specified'}.`;
+      const systemMessage = `You are Nari, a friendly and empathetic PCOS Wellness Assistant. Your goal is to provide helpful information, support, and guidance to users managing Polycystic Ovary Syndrome (PCOS). Personalize your responses based on the user's profile where appropriate. User's name: ${userProfile.name || 'there'}. User's reported symptoms: ${userProfile.symptoms?.join(', ') || 'not specified'}.`;
 
       const messagesForAPI = [
         { role: 'system', content: systemMessage },
@@ -201,7 +198,7 @@ For each food identified, please provide detailed analysis in JSON format with t
           "Authorization": `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: this.chatModel,
+          model: this.model,
           max_tokens: 500,
           temperature: 0.7,
           top_p: 0.95,

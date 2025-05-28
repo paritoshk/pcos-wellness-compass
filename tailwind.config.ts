@@ -53,6 +53,10 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				'nari-primary': '#4A9D9C',
+				'nari-accent': '#FF7062',
+				'nari-secondary': '#F7F9FA',
+				'nari-text': '#333D47',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
