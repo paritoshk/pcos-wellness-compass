@@ -69,6 +69,7 @@ const ChatInterface: React.FC = () => {
     if (messages.length > 0) {
         localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
     } else {
+        localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY);
     }
   }, [messages]);
 
@@ -81,7 +82,6 @@ const ChatInterface: React.FC = () => {
           timestamp: new Date()
         };
       setMessages([initialGreeting]);
-    } else if (messages.length === 0 && !profile.name && localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)){
     }
 
     const foodAnalysisFromState = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
