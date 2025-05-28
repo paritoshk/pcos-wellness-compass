@@ -33,3 +33,4 @@ dist-ssr
 # Playwright Test Reports
 /playwright-report/
 /test-results/
+.vercel

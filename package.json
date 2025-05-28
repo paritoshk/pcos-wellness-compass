@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm exec vite",
-    "build": "pnpm exec vite build",
+    "build": "tsc --noEmit && vite build",
     "build:dev": "pnpm exec vite build --mode development",
-    "lint": "pnpm exec eslint .",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "pnpm exec vite preview",
     "test:e2e": "pnpm exec playwright test"
   },

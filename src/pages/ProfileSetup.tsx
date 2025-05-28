@@ -69,17 +69,17 @@ const ProfileSetup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-nari-secondary p-4">
+      <Card className="w-full max-w-md bg-white shadow-xl">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">
+            <h2 className="text-2xl font-semibold text-nari-text-main">
               {currentStep === 1 && "Personal Info"}
               {currentStep === 2 && "PCOS Symptoms"}
               {currentStep === 3 && "Insulin & Weight"}
               {currentStep === 4 && "Dietary Preferences"}
             </h2>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm font-medium text-nari-text-main/70">
               Step {currentStep} of 4
             </div>
           </div>
@@ -87,25 +87,25 @@ const ProfileSetup: React.FC = () => {
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Your name</Label>
+                <Label htmlFor="name" className="text-nari-text-main/90">Your name</Label>
                 <Input 
                   id="name" 
-                  placeholder="Enter your name" 
+                  placeholder="E.g., Jane Doe"
                   value={formData.name} 
                   onChange={e => updateFormData('name', e.target.value)}
-                  className="pcos-input-focus"
+                  className="pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="age">Your age</Label>
+                <Label htmlFor="age" className="text-nari-text-main/90">Your age</Label>
                 <Input 
                   id="age" 
                   type="number" 
-                  placeholder="Enter your age" 
+                  placeholder="E.g., 30"
                   value={formData.age || ''} 
                   onChange={e => updateFormData('age', parseInt(e.target.value) || null)}
-                  className="pcos-input-focus"
+                  className="pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50"
                 />
               </div>
             </div>
@@ -131,7 +131,7 @@ const ProfileSetup: React.FC = () => {
                       }}
                       className="border-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:border-nari-primary"
                     />
-                    <label htmlFor={symptom.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label htmlFor={symptom.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-nari-text-main/90">
                       {symptom.label}
                     </label>
                   </div>
@@ -208,7 +208,7 @@ const ProfileSetup: React.FC = () => {
                       }}
                       className="border-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:border-nari-primary"
                     />
-                    <label htmlFor={option.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label htmlFor={option.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-nari-text-main/90">
                       {option.label}
                     </label>
                   </div>
