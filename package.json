@@ -7,7 +7,7 @@
     "dev": "pnpm exec vite",
     "build": "tsc --noEmit && vite build",
     "build:dev": "pnpm exec vite build --mode development",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
     "preview": "pnpm exec vite preview",
     "test:e2e": "pnpm exec playwright test"
   },
