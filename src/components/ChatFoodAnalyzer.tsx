@@ -85,7 +85,7 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
     <Card className="mb-4">
       <CardContent className="p-4">
         <div className="space-y-4">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-nari-text-main/80 text-sm">
             Take a photo of your meal to analyze its PCOS compatibility
           </p>
           
