@@ -28,21 +28,31 @@ export class FireworksAIService {
   private apiEndpoint = "https://api.fireworks.ai/inference/v1/chat/completions";
 
   constructor(config: FireworksAIConfig = {}) {
-    console.log('Vite ENV variables available in FireworksAIService:', import.meta.env);
-    // Use environment variable first, fallback to config
-    this.apiKey = import.meta.env.VITE_FIREWORKS_API_KEY || config.apiKey || "";
-    console.log('Selected API Key:', this.apiKey ? 'Key Present (masked)' : 'Key NOT Present');
+    const envApiKey = import.meta.env.VITE_FIREWORKS_API_KEY;
+    console.log("[NariAI_FireworksService] Constructor: VITE_FIREWORKS_API_KEY from import.meta.env: ", 
+                envApiKey ? `Present (length: ${envApiKey.length})` : "MISSING or empty");
+    
+    this.apiKey = envApiKey || config.apiKey || "";
+    console.log("[NariAI_FireworksService] Constructor: Final effective API Key: ", 
+                this.apiKey ? `Present (length: ${this.apiKey.length})` : "MISSING or empty");
+
     this.foodModel = config.model || "accounts/fireworks/models/firellava-13b";
-    this.chatModel = config.model || "accounts/fireworks/models/llama-v3-8b-instruct";
+    this.chatModel = config.model || "accounts/fireworks/models/llama-v3-8b-instruct"; 
+    console.log(`[NariAI_FireworksService] Models set: Food='${this.foodModel}', Chat='${this.chatModel}'`);
   }
 
   async analyzeFoodImage(imageBase64: string, userProfile: Partial<PCOSProfile>): Promise<AnalysisResult | null> {
+    console.log("[NariAI_FireworksService] analyzeFoodImage: Called.");
+    console.log("[NariAI_FireworksService] analyzeFoodImage: Current API Key: ", 
+                this.apiKey ? `Present (length: ${this.apiKey.length})` : "MISSING or empty");
+
+    if (!this.apiKey) {
+      console.error("[NariAI_FireworksService] analyzeFoodImage: API key is MISSING. Aborting.");
+      toast.error("Configuration error: AI service API key is missing. Please contact support.");
+      return null;
+    }
+    
     try {
-      if (!this.apiKey) {
-        // toast.error("Fireworks AI API key is not configured. Please contact support."); // Avoid UI side effects in service
-        throw new Error("API key is not configured for Fireworks AI service.");
-      }
-      
       const prompt = this.createAnalysisPrompt(userProfile);
       
       const response = await fetch(this.apiEndpoint, {
@@ -80,25 +90,26 @@ export class FireworksAIService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from AI service" }));
+        console.error("[NariAI_FireworksService] analyzeFoodImage: API Error", response.status, errorData);
         throw new Error(errorData.message || "Failed to analyze the image due to server error");
       }
 
       const data = await response.json();
       const content = data.choices[0]?.message?.content;
       if (!content) {
+        console.error("[NariAI_FireworksService] analyzeFoodImage: No content in AI response.");
         throw new Error("No content in AI response for food analysis.");
       }
       
       const parsedResult = JSON.parse(content);
       return this.formatAnalysisResult(parsedResult);
     } catch (error: unknown) {
-      console.error("Error analyzing food image:", error);
+      console.error("[NariAI_FireworksService] analyzeFoodImage: CATCH BLOCK Error:", error);
       let errorMessage = "Failed to analyze image. Please try again.";
       if (error instanceof Error) errorMessage = error.message;
       else if (typeof error === 'string') errorMessage = error;
-      // throw new Error(errorMessage); // Re-throwing to be caught by UI layer which can show toast
-      toast.error(errorMessage); // Or handle toast here if preferred for service-level errors
-      return null; // Return null to indicate failure to the caller
+      toast.error(errorMessage);
+      return null;
     }
   }
 
@@ -164,12 +175,17 @@ For each food identified, please provide detailed analysis in JSON format with t
   }
 
   async getChatResponse(conversationHistory: Array<{role: 'user' | 'assistant', content: string}>, userProfile: PCOSProfile): Promise<string | null> {
-    try {
-      if (!this.apiKey) {
-        // toast.error("Fireworks AI API key is not configured. Please contact support.");
-        throw new Error("API key is not configured for Fireworks AI service.");
-      }
+    console.log("[NariAI_FireworksService] getChatResponse: Called.");
+    console.log("[NariAI_FireworksService] getChatResponse: Current API Key: ", 
+                this.apiKey ? `Present (length: ${this.apiKey.length})` : "MISSING or empty");
 
+    if (!this.apiKey) {
+      console.error("[NariAI_FireworksService] getChatResponse: API key is MISSING. Aborting.");
+      toast.error("Configuration error: AI service API key is missing. Please contact support.");
+      return null;
+    }
+
+    try {
       const systemMessage = `You are Ama, a friendly and empathetic PCOS Wellness Assistant. Your goal is to provide helpful information, support, and guidance to users managing Polycystic Ovary Syndrome (PCOS). Personalize your responses based on the user's profile where appropriate. User's name: ${userProfile.name || 'there'}. User's reported symptoms: ${userProfile.symptoms?.join(', ') || 'not specified'}.`;
 
       const messagesForAPI = [
@@ -195,7 +211,7 @@ For each food identified, please provide detailed analysis in JSON format with t
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from AI service" }));
-        console.error("Fireworks AI chat error response:", errorData);
+        console.error("[NariAI_FireworksService] getChatResponse: API Error", response.status, errorData);
         throw new Error(errorData.message || "Failed to get chat response from AI");
       }
 
@@ -203,22 +219,16 @@ For each food identified, please provide detailed analysis in JSON format with t
       if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
         return data.choices[0].message.content.trim();
       }
-      // Fallback if structure is not as expected but request was OK
-      console.error("Unexpected response structure from Fireworks AI chat:", data);
+      console.error("[NariAI_FireworksService] getChatResponse: No content in AI response.");
       throw new Error("Received an unexpected response structure from the AI chat service.");
 
     } catch (error: unknown) {
-      console.error("Error getting chat response:", error);
-      let errorMessage = "I am having trouble connecting to my brain right now. Please try again in a moment."; // Friendly fallback
-      if (error instanceof Error && error.message && !error.message.toLowerCase().includes("api key")) {
-         // Don't expose generic fetch errors directly if not specific from AI
-         if (!error.message.includes("Failed to parse error response") && !error.message.includes("unexpected response structure")) {
-            errorMessage = error.message;
-         }
-      }
-      // throw new Error(errorMessage); // Re-throwing to be caught by UI layer
-      toast.error(errorMessage); // Show toast from service for now
-      return null; // Return null to indicate failure
+      console.error("[NariAI_FireworksService] getChatResponse: CATCH BLOCK Error:", error);
+      let errorMessage = "I am having trouble connecting to my brain right now. Please try again in a moment.";
+      if (error instanceof Error) errorMessage = error.message;
+      else if (typeof error === 'string') errorMessage = error;
+      toast.error(errorMessage);
+      return null;
     }
   }
 }
