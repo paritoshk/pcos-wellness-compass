@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,25 +18,22 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <BrowserRouter>
+      <UserProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<WelcomePage />} />
             <Route 
               path="/profile" 
+              element={<ProfileSetup />}
+            />
+            <Route 
               element={
                 <ManualAuthGuard>
-                  <ProfileSetup />
+                  <Layout />
                 </ManualAuthGuard>
-              } 
-            />
-            <Route element={
-              <ManualAuthGuard>
-                <Layout />
-              </ManualAuthGuard>
             }>
               <Route path="/chat" element={<ChatInterface />} />
               <Route path="/analyze" element={<FoodAnalysis />} />
@@ -46,9 +42,9 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </UserProvider>
+        </TooltipProvider>
+      </UserProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

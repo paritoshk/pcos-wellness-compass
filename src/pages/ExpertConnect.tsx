@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
+import { BadgeCheck } from 'lucide-react';
 
 interface ExpertType {
   id: string;
@@ -14,6 +14,7 @@ interface ExpertType {
   image: string;
   badges: string[];
   availability: string;
+  isVerified: boolean;
 }
 
 const experts: ExpertType[] = [
@@ -25,7 +26,8 @@ const experts: ExpertType[] = [
     description: 'Specializes in treating complex hormonal disorders including PCOS, with 15 years of clinical experience.',
     image: '/placeholder.svg',
     badges: ['Endocrinology', 'Women\'s Health', 'Insulin Resistance'],
-    availability: '2 days'
+    availability: '2 days',
+    isVerified: true
   },
   {
     id: '2',
@@ -35,7 +37,8 @@ const experts: ExpertType[] = [
     description: 'Helps women with PCOS manage their symptoms through personalized nutrition plans and lifestyle modifications.',
     image: '/placeholder.svg',
     badges: ['Nutrition', 'Weight Management', 'Anti-inflammatory Diet'],
-    availability: '24 hours'
+    availability: '24 hours',
+    isVerified: true
   },
   {
     id: '3',
@@ -45,7 +48,8 @@ const experts: ExpertType[] = [
     description: 'Focuses on reproductive health issues including PCOS management and fertility preservation.',
     image: '/placeholder.svg',
     badges: ['Gynecology', 'Fertility', 'Menstrual Health'],
-    availability: '3 days'
+    availability: '3 days',
+    isVerified: true
   },
   {
     id: '4',
@@ -55,7 +59,8 @@ const experts: ExpertType[] = [
     description: 'Certified health coach who helps women with PCOS implement sustainable lifestyle changes for symptom management.',
     image: '/placeholder.svg',
     badges: ['Lifestyle', 'Stress Management', 'Exercise Planning'],
-    availability: '1 day'
+    availability: '1 day',
+    isVerified: true
   }
 ];
 
@@ -95,9 +100,11 @@ const ExpertConnect: React.FC = () => {
                   <CardHeader className="pb-2">
                     <CardTitle>{expert.name}</CardTitle>
                     <CardDescription>{expert.title}</CardDescription>
-                    <div className="font-medium text-sm text-pcos mt-1">
-                      {expert.specialty}
-                    </div>
+                    {expert.isVerified && (
+                      <div className="font-medium text-sm text-nari-accent mt-1">
+                        <BadgeCheck className="inline-block mr-1 h-4 w-4" /> Verified Expert
+                      </div>
+                    )}
                   </CardHeader>
                   
                   <CardContent className="pb-2">
@@ -107,7 +114,7 @@ const ExpertConnect: React.FC = () => {
                     
                     <div className="flex flex-wrap gap-2">
                       {expert.badges.map((badge, index) => (
-                        <Badge key={index} variant="outline" className="bg-pcos/5 text-xs">
+                        <Badge key={index} variant="outline" className="bg-nari-accent/10 text-nari-accent border-nari-accent/50 text-xs">
                           {badge}
                         </Badge>
                       ))}
@@ -122,16 +129,16 @@ const ExpertConnect: React.FC = () => {
                       
                       <div className="flex gap-2">
                         <Button 
+                          variant="outline" 
                           size="sm"
-                          variant="outline"
-                          className="text-pcos border-pcos hover:bg-pcos/10"
+                          className="text-nari-accent border-nari-accent hover:bg-nari-accent/10"
                         >
                           View Profile
                         </Button>
                         
                         <Button
                           size="sm"
-                          className="bg-pcos hover:bg-pcos-dark"
+                          className="bg-nari-primary hover:bg-nari-primary/90"
                           onClick={() => handleConnect(expert)}
                         >
                           Connect

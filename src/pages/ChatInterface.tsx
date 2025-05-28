@@ -1,14 +1,14 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Send, Camera } from "lucide-react";
-import { useUser } from '@/contexts/UserContext';
+import { useUser, PCOSProfile, FoodAnalysisItem } from '@/contexts/UserContext';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
+import { FireworksAIService } from '@/services/fireworksAI';
 
 interface Message {
   id: string;
@@ -16,43 +16,10 @@ interface Message {
   content: string;
   timestamp: Date;
   type?: 'text' | 'food-analysis';
-  foodAnalysis?: any;
+  foodAnalysis?: FoodAnalysisItem;
 }
 
-// Hardcoded demo responses for now
-const getDemoResponse = (message: string, profile: any): string => {
-  const lowercaseMessage = message.toLowerCase();
-  
-  if (lowercaseMessage.includes('hello') || lowercaseMessage.includes('hi')) {
-    return `Hello ${profile.name}! How can I help you manage your PCOS today?`;
-  }
-  
-  if (lowercaseMessage.includes('symptom') || lowercaseMessage.includes('symptoms')) {
-    return 'PCOS symptoms can vary widely, but often include irregular periods, acne, excess hair growth, weight gain, and mood changes. Based on your profile, you mentioned experiencing ' + (profile.symptoms.join(', ')) + '. Would you like to learn about managing any of these specific symptoms?';
-  }
-  
-  if (lowercaseMessage.includes('insulin') || lowercaseMessage.includes('resistance')) {
-    return (profile.insulinResistant 
-      ? 'Since you have insulin resistance, focusing on a low-glycemic diet can be helpful. This includes eating whole foods, good sources of protein, healthy fats, and complex carbohydrates. Regular physical activity is also important for improving insulin sensitivity.'
-      : 'While you don\'t have confirmed insulin resistance, it\'s still beneficial to follow a balanced diet with steady blood sugar levels. This can help prevent developing insulin resistance in the future, which is common with PCOS.');
-  }
-  
-  if (lowercaseMessage.includes('diet') || lowercaseMessage.includes('eat') || lowercaseMessage.includes('food')) {
-    const dietaryPreferences = profile.dietaryPreferences.length > 0 
-      ? `Based on your ${profile.dietaryPreferences.join(', ')} preferences, ` 
-      : '';
-    
-    return `${dietaryPreferences}a PCOS-friendly diet typically includes anti-inflammatory foods, plenty of fiber, lean proteins, and healthy fats. It's generally advised to limit processed foods, refined carbohydrates, and added sugars. Would you like specific meal ideas?`;
-  }
-  
-  if (lowercaseMessage.includes('exercise') || lowercaseMessage.includes('workout')) {
-    return 'For PCOS, a combination of cardio and strength training is often recommended. Aim for 150 minutes of moderate exercise per week. Activities like walking, swimming, cycling, and yoga can be particularly beneficial. The key is finding something you enjoy and can maintain consistently.';
-  }
-  
-  return "I'm your PCOS Wellness assistant. I can help with questions about managing symptoms, diet recommendations, exercise guidance, and understanding your condition better. How can I support you today?";
-};
-
-const getFoodAnalysisResponse = (foodAnalysis: any): string => {
+const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
   const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : 
                             foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
   
@@ -71,40 +38,56 @@ const getFoodAnalysisResponse = (foodAnalysis: any): string => {
   return baseResponse + nutritionInfo + recommendation + alternativesText;
 };
 
+const CHAT_MESSAGES_STORAGE_KEY = 'pcosChatMessages';
+
+interface StoredMessage extends Omit<Message, 'timestamp'> {
+  timestamp: string;
+}
+
 const ChatInterface: React.FC = () => {
   const { profile } = useUser();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
+    if (savedMessages) {
+      return JSON.parse(savedMessages).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)}));
+    }
+    return [];
+  });
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showFoodAnalyzer, setShowFoodAnalyzer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const location = useLocation();
+  const fireworksAIService = useRef(new FireworksAIService()).current;
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add initial greeting message and handle food analysis from navigation
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
+    if (messages.length > 0) {
+        localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+    } else {
+        localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY);
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (messages.length === 0 && profile.name) {
+      const initialGreeting: Message = {
           id: '1',
           role: 'assistant',
-          content: `Hi ${profile.name}! I'm your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
+          content: `Hi ${profile.name}! I'm Ama, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
           timestamp: new Date()
-        }
-      ]);
+        };
+      setMessages([initialGreeting]);
     }
-    
-    // Check if we have food analysis from navigation
-    if (location.state?.foodAnalysis) {
-      const foodAnalysis = location.state.foodAnalysis;
-      
-      // Add a system message about the food analysis
-      const userMessage: Message = {
+
+    const foodAnalysisFromState = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
+    if (foodAnalysisFromState) {
+      const foodAnalysis = foodAnalysisFromState;
+      const userFoodMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
         content: `I want to share the analysis of my ${foodAnalysis.foodName} with you.`,
@@ -112,32 +95,25 @@ const ChatInterface: React.FC = () => {
         type: 'food-analysis',
         foodAnalysis: foodAnalysis
       };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Simulate AI response with delay
+      setMessages(prev => [...prev, userFoodMessage]); 
       setIsTyping(true);
       setTimeout(() => {
-        const assistantMessage: Message = {
+        const assistantFoodMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: getFoodAnalysisResponse(foodAnalysis),
           timestamp: new Date()
         };
-        
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages(prev => [...prev, assistantFoodMessage]);
         setIsTyping(false);
       }, 1500);
-      
-      // Clear the state so it doesn't reappear on refresh
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, messages.length, profile.name]);
+  }, [location.state?.foodAnalysis, profile.name, messages.length, location.state]);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
-    
-    // Add user message
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -145,22 +121,35 @@ const ChatInterface: React.FC = () => {
       timestamp: new Date()
     };
     
-    setMessages(prev => [...prev, userMessage]);
+    const newMessagesState = [...messages, userMessage];
+    setMessages(newMessagesState);
     setCurrentMessage('');
     setIsTyping(true);
-    
-    // Simulate AI response with delay
-    setTimeout(() => {
+
+    const conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = newMessagesState
+      .filter(msg => msg.role === 'user' || msg.role === 'assistant') 
+      .map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content }));
+
+    const aiResponseContent = await fireworksAIService.getChatResponse(conversationHistory, profile as PCOSProfile);
+
+    if (aiResponseContent) {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: getDemoResponse(userMessage.content, profile),
+        content: aiResponseContent,
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+    } else {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm having a little trouble thinking right now. Could you try asking again?",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    }
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -170,11 +159,9 @@ const ChatInterface: React.FC = () => {
     }
   };
   
-  const handleFoodAnalysis = (foodAnalysis: any) => {
-    // Hide the food analyzer
+  const handleFoodAnalysis = (foodAnalysis: FoodAnalysisItem) => {
     setShowFoodAnalyzer(false);
     
-    // Add a user message with food analysis
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -186,7 +173,6 @@ const ChatInterface: React.FC = () => {
     
     setMessages(prev => [...prev, userMessage]);
     
-    // Simulate AI response with delay
     setIsTyping(true);
     setTimeout(() => {
       const assistantMessage: Message = {
@@ -255,20 +241,22 @@ const ChatInterface: React.FC = () => {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <Card 
-              className={`max-w-[80%] ${
+              className={`max-w-[80%] ${ 
                 message.role === 'user' 
-                  ? 'bg-pcos text-white' 
-                  : 'bg-muted'
+                  ? 'bg-nari-primary text-white'
+                  : 'bg-white text-nari-text-main'
               }`}
             >
               <CardContent className="p-3">
                 {message.type === 'food-analysis' && renderFoodAnalysisMessage(message)}
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className={`whitespace-pre-wrap ${
+                  message.role === 'assistant' ? 'text-nari-text-main' : ''
+                }`}>{message.content}</p>
                 <div 
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-1 ${ 
                     message.role === 'user' 
                       ? 'text-white/70' 
-                      : 'text-muted-foreground'
+                      : 'text-nari-text-muted'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -283,9 +271,9 @@ const ChatInterface: React.FC = () => {
             <Card className="bg-muted max-w-[80%]">
               <CardContent className="p-3">
                 <div className="flex space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-pcos animate-pulse"></div>
-                  <div className="w-2 h-2 rounded-full bg-pcos animate-pulse delay-100"></div>
-                  <div className="w-2 h-2 rounded-full bg-pcos animate-pulse delay-200"></div>
+                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse delay-100"></div>
+                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse delay-200"></div>
                 </div>
               </CardContent>
             </Card>
@@ -300,7 +288,7 @@ const ChatInterface: React.FC = () => {
           variant="outline"
           size="icon"
           onClick={() => setShowFoodAnalyzer(!showFoodAnalyzer)}
-          className="bg-white border-pcos text-pcos hover:bg-pcos/10"
+          className="bg-white border-nari-accent text-nari-accent hover:bg-nari-accent/10"
         >
           <Camera className="h-4 w-4" />
         </Button>
@@ -309,12 +297,12 @@ const ChatInterface: React.FC = () => {
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="flex-1 pcos-input-focus"
+          className="flex-1 pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted/70 border-nari-accent/50"
         />
         <Button 
           onClick={handleSendMessage} 
           disabled={!currentMessage.trim() || isTyping}
-          className="bg-pcos hover:bg-pcos-dark"
+          className="bg-nari-primary hover:bg-nari-primary/90"
         >
           <Send className="h-4 w-4" />
         </Button>

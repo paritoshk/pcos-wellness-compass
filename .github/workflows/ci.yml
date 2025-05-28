@@ -1,0 +1,50 @@
+name: Nari AI CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 8 # Specify your pnpm version if needed, or latest stable
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Lint
+      run: pnpm run lint 
+      # Ensure you have a "lint" script in your package.json, e.g., "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+
+    - name: Install Playwright Browsers
+      run: pnpm exec playwright install --with-deps
+      # --with-deps installs necessary OS libraries for the browsers
+
+    - name: Run Playwright tests
+      run: pnpm run test:e2e
+      # Ensure you have a "test:e2e" script, e.g., "playwright test"
+
+    - name: Build
+      run: pnpm run build
+      # Ensure you have a "build" script, e.g., "tsc && vite build" 

@@ -1,6 +1,6 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useNavigate } from 'react-router-dom';
 
 export interface PCOSProfile {
   name: string;
@@ -35,8 +35,9 @@ interface UserContextType {
   isProfileComplete: boolean;
   foodAnalysisHistory: FoodAnalysisItem[];
   addFoodAnalysis: (analysis: FoodAnalysisItem) => void;
-  apiKey: string;
-  setApiKey: (key: string) => void;
+  logoutUser: () => void;
+  authIsLoading: boolean;
+  authIsAuthenticated: boolean;
 }
 
 const defaultProfile: PCOSProfile = {
@@ -55,18 +56,22 @@ const UserContext = createContext<UserContextType>({
   isProfileComplete: false,
   foodAnalysisHistory: [],
   addFoodAnalysis: () => {},
-  apiKey: '',
-  setApiKey: () => {}
+  logoutUser: () => {},
+  authIsLoading: true,
+  authIsAuthenticated: false,
 });
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth0();
+  // ALL Hooks must be called at the top level, before any conditional returns.
+  const { user, isAuthenticated, isLoading, logout: auth0Logout } = useAuth0();
+  const navigate = useNavigate();
   
   const [profile, setProfile] = useState<PCOSProfile>(() => {
+    console.log('UserProvider: Initializing profile from localStorage or default');
     const savedProfile = localStorage.getItem('pcosProfile');
-    return savedProfile ? JSON.parse(savedProfile) : defaultProfile;
+    return savedProfile ? JSON.parse(savedProfile) : { ...defaultProfile };
   });
 
   const [foodAnalysisHistory, setFoodAnalysisHistory] = useState<FoodAnalysisItem[]>(() => {
@@ -74,52 +79,66 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [apiKey, setApiKey] = useState<string>(() => {
-    const savedApiKey = localStorage.getItem('fireworksApiKey');
-    return savedApiKey || '';
-  });
-
-  // Update the profile with Auth0 user info when authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
-      setProfile(prev => {
-        // Only update name from Auth0 if it's not already set
-        const updatedProfile = {
-          ...prev,
-          name: prev.name || user.name || user.nickname || '',
-        };
-        return updatedProfile;
-      });
+    console.log('UserProvider: Auth0 useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user name:', user?.name, 'profile.completedSetup:', profile.completedSetup);
+    if (!isLoading && isAuthenticated && user && !profile.completedSetup && !profile.name) {
+      console.log('UserProvider: Auth0 user identified, profile not complete, setting guest name from Auth0');
+      setProfile(prev => ({
+        ...prev,
+        name: user.name || user.nickname || 'Auth0 User',
+      }));
     }
-  }, [isAuthenticated, user]);
+  }, [isLoading, isAuthenticated, user, profile.completedSetup, profile.name]);
 
-  // Save API key to localStorage when it changes
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('fireworksApiKey', apiKey);
-    }
-  }, [apiKey]);
-
-  const isProfileComplete = profile.completedSetup;
-
-  const updateProfile = (data: Partial<PCOSProfile>) => {
+  const updateProfile = useCallback((data: Partial<PCOSProfile>) => {
+    console.log('UserProvider: updateProfile called with:', data);
     setProfile((prev) => {
       const updatedProfile = { ...prev, ...data };
+      localStorage.setItem('pcosProfile', JSON.stringify(updatedProfile));
       return updatedProfile;
     });
-  };
+  }, []); 
 
-  const addFoodAnalysis = (analysis: FoodAnalysisItem) => {
+  const addFoodAnalysis = useCallback((analysis: FoodAnalysisItem) => {
     setFoodAnalysisHistory(prev => {
       const updated = [analysis, ...prev];
       localStorage.setItem('foodAnalysisHistory', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
+
+  const logoutUser = useCallback(() => {
+    console.log('UserProvider: logoutUser called. Auth0 isAuthenticated:', isAuthenticated);
+    if (isAuthenticated) {
+      console.log('UserProvider: Calling auth0Logout');
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    }
+    setProfile({ ...defaultProfile });
+    setFoodAnalysisHistory([]);
+    localStorage.removeItem('pcosProfile');
+    localStorage.removeItem('foodAnalysisHistory');
+    console.log('UserProvider: Navigating to / after logout');
+    navigate('/');
+  }, [isAuthenticated, auth0Logout, navigate]);
 
   useEffect(() => {
-    localStorage.setItem('pcosProfile', JSON.stringify(profile));
+    if(profile.name || profile.completedSetup) { 
+      console.log('UserProvider: Persisting profile to localStorage:', profile);
+      localStorage.setItem('pcosProfile', JSON.stringify(profile));
+    }
   }, [profile]);
+
+  // Now, the conditional return for isLoading is AFTER all hook calls.
+  console.log('UserProvider: Auth0 state before isLoading check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+  if (isLoading) {
+    console.log("UserProvider: Auth0 is loading. Returning null to prevent further rendering until auth is resolved.");
+    return null; 
+  }
+
+  // This calculation must also be after the isLoading check, or if profile might not be fully initialized.
+  const isProfileComplete = profile.completedSetup;
+  console.log('UserProvider: isProfileComplete calculated as:', isProfileComplete, 'based on profile.completedSetup:', profile.completedSetup);
+  console.log('UserProvider: Rendering context with profile:', profile, 'isProfileComplete:', isProfileComplete);
 
   return (
     <UserContext.Provider value={{ 
@@ -128,8 +147,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isProfileComplete, 
       foodAnalysisHistory, 
       addFoodAnalysis,
-      apiKey,
-      setApiKey
+      logoutUser,
+      authIsLoading: isLoading, // This will be false here due to the check above
+      authIsAuthenticated: isAuthenticated
     }}>
       {children}
     </UserContext.Provider>
