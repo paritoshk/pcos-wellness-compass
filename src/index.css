@@ -110,15 +110,15 @@
   }
 
   /* Custom Tab Styles */
-  .tabs-trigger:hover:not([data-state='active']) {
-    background-color: hsl(var(--primary) / 0.1); /* Light Nari primary background */
-    color: hsl(var(--foreground)); /* Ensure text remains dark */
+  /* .tabs-trigger:hover:not([data-state='active']) {
+    background-color: hsl(var(--primary) / 0.1); 
+    color: hsl(var(--foreground)); 
   }
 
   .tabs-trigger[data-state='active']:hover {
-    background-color: hsl(var(--background)); /* Keep active background */
-    color: hsl(var(--foreground)); /* Keep active text color */
-  }
+    background-color: hsl(var(--background)); 
+    color: hsl(var(--foreground)); 
+  } */
 }
 
 .gradient-text {

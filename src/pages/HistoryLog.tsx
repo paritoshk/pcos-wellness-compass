@@ -90,7 +90,10 @@ const HistoryLog: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-3xl font-poppins font-semibold text-nari-text-main">Your Wellness History</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-poppins font-semibold text-foreground mb-2">Your Wellness History</h1>
+        <p className="text-muted-foreground">Track your food analyses and chat conversations</p>
+      </div>
       
       <Tabs defaultValue="analyses" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
