@@ -1,73 +1,105 @@
-# Welcome to your Lovable project
+# PCOS Wellness Compass
 
-## Project info
+## 💖 Your Companion for Navigating PCOS Wellness
 
-**URL**: https://lovable.dev/projects/f97ada70-9d2d-4f71-911c-3427c88a81cd
+PCOS Wellness Compass is a web application designed to support individuals with Polycystic Ovary Syndrome (PCOS) by providing tools and information to manage their health and wellness journey. This application aims to offer features like food analysis, insightful chat, and personalized tracking.
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+*   **Informative Content:** Access to curated information about PCOS.
+*   **Symptom Tracker (Planned):** Log and monitor symptoms over time.
+*   **Food Journal & Analysis (In Progress):**
+    *   Log meals and analyze their nutritional content.
+    *   Image-based food recognition for quick logging.
+*   **AI-Powered Chat (Planned):** Get answers to common PCOS questions and receive support.
+*   **Personalized Insights (Planned):** Receive insights based on tracked data.
+*   **User Accounts & History (Planned):** Securely store your data, chat history, and analysis results with Auth0 and Supabase integration.
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f97ada70-9d2d-4f71-911c-3427c88a81cd) and start prompting.
+This project is built with modern web technologies:
 
-Changes made via Lovable will be committed automatically to this repo.
+*   **Frontend:** React, Vite, TypeScript
+*   **UI Components:** shadcn-ui
+*   **Styling:** Tailwind CSS
+*   **Package Manager:** pnpm
+*   **Deployment:** Vercel (primarily), Lovable
 
-**Use your preferred IDE**
+## 📋 Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Before you begin, ensure you have the following installed:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+*   [Node.js](https://nodejs.org/) (LTS version recommended)
+*   [pnpm](https://pnpm.io/installation) (This project uses `pnpm` for package management)
 
-Follow these steps:
+## 🚀 Getting Started
+
+Follow these steps to set up and run the project locally:
+
+1.  **Clone the Repository:**
+    ```sh
+    git clone <YOUR_GIT_URL> # Replace <YOUR_GIT_URL> with the actual URL of this repository
+    ```
+
+2.  **Navigate to the Project Directory:**
+    ```sh
+    cd pcos-wellness-compass # Or your project's directory name
+    ```
+
+3.  **Install Dependencies:**
+    ```sh
+    pnpm install
+    ```
+
+4.  **Environment Variables:**
+    Create a `.env` file in the root of the project by copying from `.env.example` (if one exists). Populate it with necessary API keys and configuration values.
+    *Initially, this might not be strictly necessary for basic UI rendering but will be crucial for features like Auth0, Supabase, and any external APIs.*
+
+5.  **Start the Development Server:**
+    ```sh
+    pnpm run dev
+    ```
+    This will start the development server, typically at `http://localhost:5173`, with auto-reloading and an instant preview.
+
+## ✅ Running Tests
+
+To run automated tests (if configured):
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-pnpm install
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-pnpm run dev
+pnpm run test # Or the specific test command defined in package.json
 ```
+*(Note: Test scripts and configurations might need to be set up if not already present.)*
 
-**Edit a file directly in GitHub**
+## ☁️ Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+This project is configured for deployment on Vercel. Refer to `vercel.json` and `DEPLOYMENT.md` for more details on the Vercel deployment setup.
 
-**Use GitHub Codespaces**
+Alternatively, deployment can also be managed via [Lovable](https://lovable.dev/projects/f97ada70-9d2d-4f71-911c-3427c88a81cd) by clicking on Share -> Publish.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🤝 Contributing
 
-## What technologies are used for this project?
+Contributions are welcome! If you'd like to contribute, please:
 
-This project is built with:
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/YourFeature`).
+3.  Make your changes.
+4.  Commit your changes (`git commit -m 'Add some feature'`).
+5.  Push to the branch (`git push origin feature/YourFeature`).
+6.  Open a Pull Request.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Please ensure your code adheres to the project's linting rules and includes tests where applicable.
 
-## How can I deploy this project?
+## 🎯 Future Goals
 
-Simply open [Lovable](https://lovable.dev/projects/f97ada70-9d2d-4f71-911c-3427c88a81cd) and click on Share -> Publish.
+*   Full integration of Auth0 for secure authentication.
+*   Supabase integration for database (user profiles, chat history, food logs, analysis results) and storage (user-uploaded images).
+*   Enhanced mobile optimization and PWA capabilities.
 
-## Can I connect a custom domain to my Lovable project?
+## 📄 License
 
-Yes it is!
+*(Specify your license here, e.g., MIT License. If no license is chosen, consider adding one.)*
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+*This README was last updated by an AI assistant.*
+    
