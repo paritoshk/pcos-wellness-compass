@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import { UserProvider } from "./contexts/UserContext";
 import ManualAuthGuard from "./components/AuthGuard";
+import PcosQuiz from "./pages/PcosQuiz";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/analyze" element={<FoodAnalysis />} />
               <Route path="/history" element={<HistoryLog />} />
               <Route path="/experts" element={<ExpertConnect />} />
+              <Route path="/quiz" element={<PcosQuiz />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

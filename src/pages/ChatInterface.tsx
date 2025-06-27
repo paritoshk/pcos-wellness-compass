@@ -288,12 +288,14 @@ const ChatInterface: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
       
-      <div className="flex gap-2 sticky bottom-0">
+      <div className="flex gap-2 sticky bottom-0 bg-background/95 backdrop-blur-sm pt-2">
         <Button 
           variant="outline"
           size="icon"
           onClick={() => setShowFoodAnalyzer(!showFoodAnalyzer)}
-          className="bg-white border-nari-accent text-nari-accent hover:bg-nari-accent/10"
+          className={`bg-white border-nari-accent text-nari-accent hover:bg-nari-accent/10 ${
+            showFoodAnalyzer ? 'bg-nari-accent/20 border-nari-accent' : ''
+          }`}
         >
           <Camera className="h-4 w-4" />
         </Button>

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { ButtonColorful } from "@/components/ui/button-colorful";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Toggle } from "@/components/ui/toggle";
 import { useUser, PCOSProfile } from '@/contexts/UserContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Common PCOS symptoms
 const pcosSymptoms = [
@@ -44,9 +46,43 @@ const ProfileSetup: React.FC = () => {
     weightGoals: profile.weightGoals,
     dietaryPreferences: profile.dietaryPreferences || [],
   });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (step === 1) {
+      if (!formData.name?.trim()) {
+        newErrors.name = 'Name is required';
+      }
+      if (!formData.age || formData.age < 12 || formData.age > 100) {
+        newErrors.age = 'Please enter a valid age (12-100)';
+      }
+    }
+    
+    if (step === 2) {
+      if (!formData.symptoms?.length) {
+        newErrors.symptoms = 'Please select at least one symptom';
+      }
+    }
+    
+    if (step === 3) {
+      if (formData.insulinResistant === null || formData.insulinResistant === undefined) {
+        newErrors.insulinResistant = 'Please select an option';
+      }
+      if (!formData.weightGoals) {
+        newErrors.weightGoals = 'Please select your weight goal';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleNext = () => {
-    setCurrentStep(prev => prev + 1);
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => prev + 1);
+    }
   };
 
   const handlePrevious = () => {
@@ -54,11 +90,13 @@ const ProfileSetup: React.FC = () => {
   };
 
   const handleComplete = () => {
-    updateProfile({
-      ...formData,
-      completedSetup: true
-    });
-    navigate('/chat');
+    if (validateStep(currentStep)) {
+      updateProfile({
+        ...formData,
+        completedSetup: true
+      });
+      navigate('/quiz');
+    }
   };
 
   const updateFormData = (key: keyof PCOSProfile, value: PCOSProfile[keyof PCOSProfile]) => {
@@ -93,8 +131,9 @@ const ProfileSetup: React.FC = () => {
                   placeholder="E.g., Jane Doe"
                   value={formData.name} 
                   onChange={e => updateFormData('name', e.target.value)}
-                  className="pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50"
+                  className={`pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50 ${errors.name ? 'border-red-500' : ''}`}
                 />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -105,8 +144,9 @@ const ProfileSetup: React.FC = () => {
                   placeholder="E.g., 30"
                   value={formData.age || ''} 
                   onChange={e => updateFormData('age', parseInt(e.target.value) || null)}
-                  className="pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50"
+                  className={`pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted border-nari-accent/50 ${errors.age ? 'border-red-500' : ''}`}
                 />
+                {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
               </div>
             </div>
           )}
@@ -118,25 +158,23 @@ const ProfileSetup: React.FC = () => {
               </p>
               <div className="grid grid-cols-1 gap-3">
                 {pcosSymptoms.map((symptom) => (
-                  <div key={symptom.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={symptom.id} 
-                      checked={formData.symptoms?.includes(symptom.label)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          updateFormData('symptoms', [...(formData.symptoms || []), symptom.label]);
-                        } else {
-                          updateFormData('symptoms', formData.symptoms?.filter(s => s !== symptom.label) || []);
-                        }
-                      }}
-                      className="border-nari-accent data-[state=checked]:bg-nari-primary data-[state=checked]:border-nari-primary"
-                    />
-                    <label htmlFor={symptom.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-nari-text-main/90">
-                      {symptom.label}
-                    </label>
-                  </div>
+                  <Toggle
+                    key={symptom.id}
+                    pressed={formData.symptoms?.includes(symptom.label)}
+                    onPressedChange={(pressed) => {
+                      if (pressed) {
+                        updateFormData('symptoms', [...(formData.symptoms || []), symptom.label]);
+                      } else {
+                        updateFormData('symptoms', formData.symptoms?.filter(s => s !== symptom.label) || []);
+                      }
+                    }}
+                    className="justify-start h-auto p-3 text-left data-[state=on]:bg-nari-primary data-[state=on]:text-white hover:bg-nari-accent/10"
+                  >
+                    {symptom.label}
+                  </Toggle>
                 ))}
               </div>
+              {errors.symptoms && <p className="text-red-500 text-sm mt-2">{errors.symptoms}</p>}
             </div>
           )}
 
@@ -162,6 +200,7 @@ const ProfileSetup: React.FC = () => {
                     <Label htmlFor="insulin-unknown">I don't know</Label>
                   </div>
                 </RadioGroup>
+                {errors.insulinResistant && <p className="text-red-500 text-sm mt-1">{errors.insulinResistant}</p>}
               </div>
 
               <div className="space-y-3">
@@ -184,6 +223,7 @@ const ProfileSetup: React.FC = () => {
                     <Label htmlFor="gain">Gain weight</Label>
                   </div>
                 </RadioGroup>
+                {errors.weightGoals && <p className="text-red-500 text-sm mt-1">{errors.weightGoals}</p>}
               </div>
             </div>
           )}
@@ -244,12 +284,11 @@ const ProfileSetup: React.FC = () => {
                 Next
               </Button>
             ) : (
-              <Button 
+              <ButtonColorful 
                 onClick={handleComplete}
+                label="Complete Setup"
                 className="bg-nari-primary hover:bg-nari-primary/90"
-              >
-                Complete
-              </Button>
+              />
             )}
           </div>
         </CardContent>

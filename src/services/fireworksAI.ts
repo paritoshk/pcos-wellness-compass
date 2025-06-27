@@ -75,7 +75,7 @@ export class FireworksAIService {
                 {
                   type: "image_url",
                   image_url: {
-                    url: imageBase64
+                    url: imageBase64.startsWith('data:image') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
                   }
                 }
               ]

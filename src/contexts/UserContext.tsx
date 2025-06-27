@@ -10,6 +10,8 @@ export interface PCOSProfile {
   weightGoals: 'maintain' | 'lose' | 'gain' | null;
   dietaryPreferences: string[];
   completedSetup: boolean;
+  quizResults?: Record<string, string | string[]>;
+  completedQuiz?: boolean;
 }
 
 export interface FoodAnalysisItem {

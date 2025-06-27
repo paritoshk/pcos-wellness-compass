@@ -1,155 +1,119 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Menu, Camera, MessageCircle, FileText, HeartPulse } from "lucide-react";
-import LogoutButton from './LogoutButton';
-import { Link } from 'react-router-dom';
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menu, User, LogOut, MessageCircle, Camera, FileText, HeartPulse } from 'lucide-react';
 
 const Layout = () => {
   const { isProfileComplete, profile } = useUser();
-  const { user } = useAuth0();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth0();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
-    // If profile is not complete, redirect to profile setup
-    if (!isProfileComplete) {
+    if (isProfileComplete === false) { // Explicitly check for false to avoid issues during initial load
       navigate('/profile');
     }
   }, [isProfileComplete, navigate]);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  // Close mobile menu when navigating
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  const sidebarNavItems = [
-    { path: '/chat', icon: MessageCircle, name: 'Chat' },
-    { path: '/analyze', icon: Camera, name: 'Analyze Food' },
-    { path: '/history', icon: FileText, name: 'History' },
-    { path: '/experts', icon: HeartPulse, name: 'Experts' },
+  const navItems = [
+    { path: '/chat', name: 'Chat', icon: MessageCircle },
+    { path: '/analyze', name: 'Analyze Food', icon: Camera },
+    { path: '/history', name: 'History', icon: FileText },
+    { path: '/experts', name: 'Experts', icon: HeartPulse },
   ];
 
-  const mobileNavItems = [
-    { path: '/chat', icon: MessageCircle, name: 'Chat' },
-    { path: '/analyze', icon: Camera, name: 'Analyze' },
-    { path: '/history', icon: FileText, name: 'History' },
-    { path: '/experts', icon: HeartPulse, name: 'Experts' },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
   const displayName = profile.name || user?.name || user?.nickname || "User";
+  const userImage = user?.picture || '';
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="flex h-screen bg-nari-secondary">
-      {/* Sidebar (Desktop) */}
-      <div className="hidden md:flex md:flex-col md:w-64 border-r bg-white">
-        <div className="p-4">
-          <Link to="/chat" className="flex items-center gap-2 mb-2">
-            <img src="/logo.png" alt="Nari AI Logo" className="h-9 w-auto object-contain" />
-            <h1 className="font-poppins font-semibold text-xl text-nari-text-main">Nari AI</h1>
-          </Link>
-          <p className="text-lg font-semibold text-nari-text-main mt-3 mb-1">Welcome, {displayName}</p>
-        </div>
-        <Separator className="my-2" />
-        <nav className="flex-1 p-2 space-y-1">
-          {sidebarNavItems.map((item) => (
-            <Button 
-              key={item.name}
-              variant="ghost" 
-              className={`w-full justify-start ${
-                isActive(item.path) 
-                  ? 'bg-nari-primary text-white font-semibold' 
-                  : 'text-nari-text hover:bg-nari-primary/10 hover:text-nari-text'
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className="mr-2 h-5 w-5" />
-              {item.name}
-            </Button>
-          ))}
-        </nav>
-        <div className="p-4 mt-auto">
-          <LogoutButton />
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar (Mobile) */}
-        <header className="md:hidden p-4 border-b flex justify-between items-center bg-white">
+    <div className="flex flex-col h-screen bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <Link to="/chat" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Nari AI Logo" className="h-8 w-auto object-contain" />
-            <h1 className="font-poppins font-semibold text-lg text-nari-text-main">Nari AI</h1>
+            <img src="/logo.png" alt="Nari AI Logo" className="h-9 w-auto object-contain" />
+            <h1 className="font-poppins font-semibold text-xl text-foreground hidden sm:block">Nari AI</h1>
           </Link>
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-6 w-6 text-nari-text-main" />
+
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Button
+                key={item.name}
+                variant={location.pathname.startsWith(item.path) ? "secondary" : "ghost"}
+                className="text-sm font-medium"
+                onClick={() => navigate(item.path)}
+              >
+                {item.name}
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-64 p-0">
-              <div className="p-4 border-b">
-                <Link to="/chat" className="flex items-center gap-2 mb-2">
-                  <img src="/logo.png" alt="Nari AI Logo" className="h-8 w-auto object-contain" />
-                  <h2 className="font-poppins font-semibold text-lg text-nari-text-main">Nari AI</h2>
-                </Link>
-                <p className="text-md font-semibold text-nari-text-main mt-3 mb-1">Welcome, {displayName}</p>
-              </div>
-              <Separator className="my-2" />
-              <nav className="flex-1 p-2 space-y-1">
-                {sidebarNavItems.map((item) => (
-                  <Button 
-                    key={item.name}
-                    variant="ghost" 
-                    className={`w-full justify-start ${
-                      isActive(item.path) 
-                        ? 'bg-nari-primary text-white font-semibold' 
-                        : 'text-nari-text hover:bg-nari-primary/10 hover:text-nari-text'
-                    }`}
-                    onClick={() => { navigate(item.path); setIsSheetOpen(false); }}
-                  >
-                    <item.icon className="mr-2 h-5 w-5" />
-                    {item.name}
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10 border">
+                    <AvatarImage src={userImage} alt={displayName} />
+                    <AvatarFallback>{userInitial}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuItem disabled>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{displayName}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-6 w-6" />
                   </Button>
-                ))}
-              </nav>
-              <div className="p-4 mt-auto border-t">
-                <LogoutButton />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </header>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {navItems.map((item) => (
+                    <DropdownMenuItem key={item.name} onClick={() => navigate(item.path)}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto">
+        <div className="container py-4 md:py-6">
           <Outlet />
-        </main>
-
-        {/* Bottom Navigation (Mobile) */}
-        <nav className="md:hidden border-t p-2 flex justify-around">
-          {mobileNavItems.map((item) => (
-            <Button 
-              key={item.name} 
-              variant="ghost" 
-              className={`flex flex-col items-center h-auto p-1 ${isActive(item.path) ? 'text-nari-primary' : 'text-nari-text-muted'}`}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className="h-5 w-5 mb-0.5" />
-              <span className="text-xs">{item.name}</span>
-            </Button>
-          ))}
-        </nav>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
