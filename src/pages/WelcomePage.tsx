@@ -61,15 +61,13 @@ const WelcomePage = () => {
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   backdropFilter: 'blur(10px)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer'
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'default'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
                   e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -101,15 +99,13 @@ const WelcomePage = () => {
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   backdropFilter: 'blur(10px)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer'
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'default'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
                   e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -141,15 +137,13 @@ const WelcomePage = () => {
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   backdropFilter: 'blur(10px)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer'
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'default'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
                   e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -181,15 +175,13 @@ const WelcomePage = () => {
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   backdropFilter: 'blur(10px)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer'
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'default'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
                   e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}
               >

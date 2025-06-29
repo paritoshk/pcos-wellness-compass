@@ -60,7 +60,7 @@ const PCOSQuiz: React.FC = () => {
   });
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
-  const nextStep = () => setActive((current) => (current < 6 ? current + 1 : current));
+  const nextStep = () => setActive((current) => (current < 5 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
   
   const handleValueChange = (field: keyof PCOSProfile, value: string | boolean | string[] |'yes' | 'no') => {
@@ -221,7 +221,7 @@ const PCOSQuiz: React.FC = () => {
               name="weightManagementGoal"
               label="Are you currently trying to manage your weight?"
               value={formData.weightManagementGoal || ''}
-              onChange={(value) => handleValueChange('weightManagementGoal', value)}
+              onChange={(value) => handleValueChange('weightManagementGoal', value as string)}
             >
               <Stack mt="xs">
                 <Radio value="lose" label="Yes, trying to lose weight" color="pink" />
@@ -230,31 +230,20 @@ const PCOSQuiz: React.FC = () => {
                 <Radio value="not_focused" label="I'm not focused on weight right now" color="pink" />
               </Stack>
             </Radio.Group>
-            <Radio.Group name="primaryGoal" label="What's your primary goal right now?" value={formData.primaryGoal || ''} onChange={(value) => handleValueChange('primaryGoal', value)}>
-              <Stack mt="xs">{goalOptions.map(g => <Radio key={g} value={g} label={g} color="pink" />)}</Stack>
-            </Radio.Group>
-          </Stack>
-        );
-      case 5: // Goals
-        return (
-          <Stack gap="xl" p="md">
-            <Title order={4}>Lifestyle & Goals</Title>
-            <Text c="dimmed" size="sm">
-              Thinking about your health journey, which one of these is most important to you right now?
-            </Text>
-            <Radio.Group
-              name="primaryGoal"
-              value={formData.primaryGoal || ''}
-              onChange={(value) => handleValueChange('primaryGoal', value)}
+            <Radio.Group 
+              name="primaryGoal" 
+              label="What's your primary goal right now?" 
+              value={formData.primaryGoal || ''} 
+              onChange={(value) => handleValueChange('primaryGoal', value as string)}
             >
               <Stack mt="xs">
-                {goalOptions.map((goal) => (
-                  <Radio key={goal} value={goal} label={goal} color="pink" />
-                ))}
+                {goalOptions.map(g => <Radio key={g} value={g} label={g} color="pink" />)}
               </Stack>
             </Radio.Group>
           </Stack>
         );
+      case 5: // This step is now removed
+        return null;
       default:
         return null;
     }
@@ -279,22 +268,19 @@ const PCOSQuiz: React.FC = () => {
       >
         <Stack gap="xl">
           <Stepper active={active} onStepClick={setActive} color="pink">
-            <Stepper.Step label="Welcome" description="Disclaimer">
+            <Stepper.Step label="Welcome" description="Disclaimer" style={{flexDirection: 'column', alignItems: 'center'}}>
               {renderStepContent()}
             </Stepper.Step>
-            <Stepper.Step label="Symptoms" description="Your experiences">
+            <Stepper.Step label="Symptoms" description="Your experiences" style={{flexDirection: 'column', alignItems: 'center'}}>
               {renderStepContent()}
             </Stepper.Step>
-            <Stepper.Step label="Medical History" description="Related conditions">
+            <Stepper.Step label="Medical History" description="Related conditions" style={{flexDirection: 'column', alignItems: 'center'}}>
               {renderStepContent()}
             </Stepper.Step>
-            <Stepper.Step label="Physical Health" description="Measurements">
+            <Stepper.Step label="Physical Health" description="Measurements" style={{flexDirection: 'column', alignItems: 'center'}}>
               {renderStepContent()}
             </Stepper.Step>
-            <Stepper.Step label="Lifestyle" description="Diet & Goals">
-              {renderStepContent()}
-            </Stepper.Step>
-            <Stepper.Step label="Goals" description="What matters most">
+            <Stepper.Step label="Lifestyle" description="Diet & Goals" style={{flexDirection: 'column', alignItems: 'center'}}>
               {renderStepContent()}
             </Stepper.Step>
             <Stepper.Completed>
@@ -320,17 +306,17 @@ const PCOSQuiz: React.FC = () => {
           </Stepper>
 
           <Group justify="flex-end" mt="xl">
-            {active > 0 && active < 6 && (
+            {active > 0 && active < 5 && (
               <Button variant="default" onClick={prevStep}>
                 Back
               </Button>
             )}
-            {active < 5 && (
+            {active < 4 && (
               <Button onClick={nextStep} color="pink" disabled={active === 0 && !disclaimerAccepted}>
                 Next
               </Button>
             )}
-            {active === 5 && (
+            {active === 4 && (
               <Button onClick={handleComplete} color="pink">
                 See My Results
               </Button>

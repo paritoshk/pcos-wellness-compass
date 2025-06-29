@@ -39,17 +39,17 @@ const theme = createTheme({
 })
 
 const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const navigate = useNavigate()
-  const domain = import.meta.env.VITE_AUTH0_DOMAIN
-  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
+  const navigate = useNavigate();
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
 
   const onRedirectCallback = (appState?: AppState) => {
-    navigate(appState?.returnTo || window.location.pathname)
-  }
+    navigate(appState?.returnTo || window.location.pathname);
+  };
 
   const appUrl = import.meta.env.VITE_VERCEL_URL
     ? `https://${import.meta.env.VITE_VERCEL_URL}`
-    : 'http://localhost:8080'
+    : 'http://localhost:8080';
 
   // This check is the important one for developers.
   if (!domain || !clientId) {
@@ -65,7 +65,7 @@ const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ ch
           </Text>
         </Stack>
       </Center>
-    )
+    );
   }
 
   return (
@@ -73,14 +73,14 @@ const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ ch
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: `${appUrl}/chat`
+        redirect_uri: appUrl
       }}
       onRedirectCallback={onRedirectCallback}
     >
       {children}
     </Auth0Provider>
-  )
-}
+  );
+};
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

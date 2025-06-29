@@ -31,6 +31,7 @@ export interface PCOSProfile {
   medications?: string[];
   stressLevel?: 'low' | 'moderate' | 'high' | null;
   isTryingToConceive?: 'yes' | 'no' | 'not_sure' | null;
+  skippedExtendedQuizPrompt?: boolean;
 }
 
 export interface FoodAnalysisItem {
@@ -93,6 +94,7 @@ const defaultProfile: PCOSProfile = {
   medications: [],
   stressLevel: null,
   isTryingToConceive: null,
+  skippedExtendedQuizPrompt: false,
 };
 
 const UserContext = createContext<UserContextType>({
