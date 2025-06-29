@@ -1,30 +1,39 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Loader, Center } from '@mantine/core';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-const ManualAuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isProfileComplete } = useUser();
-  const location = useLocation();
+const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+  const { isProfileComplete } = useUser(); // We now know this means completedQuiz
+  const { isAuthenticated, isLoading } = useAuth0();
 
-  // For routes protected by this guard, if profile is not complete, redirect to profile setup.
-  // The Welcome page (/) is not protected by this version of the guard.
-  // ProfileSetup page will also not be protected by this to allow access.
-  if (!isProfileComplete) {
-    // Allow access to /profile even if not complete yet.
-    // Other routes (chat, analyze, etc.) will be implicitly protected by Layout requiring profile completion.
-    // This specific guard instance in App.tsx wraps Layout, so this check is for Layout children.
-    if (location.pathname !== '/profile') {
-        // Redirect to profile page to complete setup if trying to access other protected routes.
-        // If they are already on /profile, let them stay.
-        return <Navigate to="/profile" state={{ from: location }} replace />;
-    }
+  if (isLoading) {
+    return (
+      <Center style={{ height: '100vh' }}>
+        <Loader color="pink" />
+      </Center>
+    );
   }
 
+  // If the user is not logged in via Auth0, redirect them to the home page
+  // where they can use the Login button.
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  // If the user IS logged in, but they haven't completed the quiz,
+  // send them to the quiz.
+  if (isAuthenticated && !isProfileComplete) {
+    return <Navigate to="/quiz" replace />;
+  }
+  
+  // If the user is authenticated AND has completed the quiz, show the requested page.
   return <>{children}</>;
 };
 
-export default ManualAuthGuard;
+export default AuthGuard;

@@ -1,25 +1,22 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-// import { useNavigate } from "react-router-dom"; // No longer needed directly here
-import { useUser } from "@/contexts/UserContext";
+import React from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Button } from '@mantine/core';
+import { IconLogout } from '@tabler/icons-react';
 
-const LogoutButton: React.FC = () => {
-  // const navigate = useNavigate(); // Handled by logoutUser in context
-  const { logoutUser } = useUser(); // Use the new logoutUser function
-  
+const LogoutButton = () => {
+  const { logout } = useAuth0();
+
   const handleLogout = () => {
-    logoutUser(); // Call the context function
+    logout({ logoutParams: { returnTo: window.location.origin } });
   };
 
   return (
-    <Button 
+    <Button
       onClick={handleLogout}
-      variant="ghost"
-      className="flex items-center gap-2 hover:bg-red-100 hover:text-red-600 transition-colors w-full justify-start"
+      variant="default"
+      leftSection={<IconLogout size={16} />}
     >
-      <LogOut className="h-4 w-4" />
-      <span>Log Out</span>
+      Log Out
     </Button>
   );
 };

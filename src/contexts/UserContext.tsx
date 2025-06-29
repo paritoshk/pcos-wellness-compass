@@ -5,13 +5,14 @@ import { useNavigate } from 'react-router-dom';
 export interface PCOSProfile {
   name: string;
   age: number | null;
+  periodRegularity: 'regular' | 'irregular' | 'absent' | null;
+  primaryGoal: string | null;
+  weightManagementGoal: 'lose' | 'gain' | 'maintain' | 'not_focused' | null;
+  pcosProbability: 'low' | 'medium' | 'high' | null;
   symptoms: string[];
   insulinResistant: boolean | null;
-  weightGoals: 'maintain' | 'lose' | 'gain' | null;
   dietaryPreferences: string[];
-  completedSetup: boolean;
-  quizResults?: Record<string, string | string[]>;
-  completedQuiz?: boolean;
+  completedQuiz: boolean;
 }
 
 export interface FoodAnalysisItem {
@@ -45,11 +46,14 @@ interface UserContextType {
 const defaultProfile: PCOSProfile = {
   name: '',
   age: null,
+  periodRegularity: null,
+  primaryGoal: null,
+  weightManagementGoal: null,
+  pcosProbability: null,
   symptoms: [],
   insulinResistant: null,
-  weightGoals: null,
   dietaryPreferences: [],
-  completedSetup: false
+  completedQuiz: false
 };
 
 const UserContext = createContext<UserContextType>({
@@ -82,15 +86,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
-    console.log('UserProvider: Auth0 useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user name:', user?.name, 'profile.completedSetup:', profile.completedSetup);
-    if (!isLoading && isAuthenticated && user && !profile.completedSetup && !profile.name) {
+    console.log('UserProvider: Auth0 useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user name:', user?.name, 'profile.completedQuiz:', profile.completedQuiz);
+    if (!isLoading && isAuthenticated && user && !profile.completedQuiz && !profile.name) {
       console.log('UserProvider: Auth0 user identified, profile not complete, setting guest name from Auth0');
       setProfile(prev => ({
         ...prev,
         name: user.name || user.nickname || 'Auth0 User',
       }));
     }
-  }, [isLoading, isAuthenticated, user, profile.completedSetup, profile.name]);
+  }, [isLoading, isAuthenticated, user, profile.completedQuiz, profile.name]);
 
   const updateProfile = useCallback((data: Partial<PCOSProfile>) => {
     console.log('UserProvider: updateProfile called with:', data);
@@ -124,7 +128,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isAuthenticated, auth0Logout, navigate]);
 
   useEffect(() => {
-    if(profile.name || profile.completedSetup) { 
+    if(profile.name || profile.completedQuiz) { 
       console.log('UserProvider: Persisting profile to localStorage:', profile);
       localStorage.setItem('pcosProfile', JSON.stringify(profile));
     }
@@ -138,8 +142,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   // This calculation must also be after the isLoading check, or if profile might not be fully initialized.
-  const isProfileComplete = profile.completedSetup;
-  console.log('UserProvider: isProfileComplete calculated as:', isProfileComplete, 'based on profile.completedSetup:', profile.completedSetup);
+  const isProfileComplete = profile.completedQuiz;
+  console.log('UserProvider: isProfileComplete calculated as:', isProfileComplete, 'based on profile.completedQuiz:', profile.completedQuiz);
   console.log('UserProvider: Rendering context with profile:', profile, 'isProfileComplete:', isProfileComplete);
 
   return (

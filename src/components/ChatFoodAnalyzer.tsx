@@ -1,12 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Camera, X, Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { Button, Text, Group, Stack, Image, Center, Loader, Box } from '@mantine/core';
+import { IconCamera, IconTrash, IconToolsKitchen2 } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
 import { FireworksAIService } from '@/services/fireworksAI';
-import { useNavigate } from 'react-router-dom';
 
 interface ChatFoodAnalyzerProps {
   onAnalysisComplete: (analysis: FoodAnalysisItem) => void;
@@ -15,19 +12,14 @@ interface ChatFoodAnalyzerProps {
 const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile, addFoodAnalysis } = useUser();
-  const navigate = useNavigate();
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setSelectedImage(result);
-      };
+      reader.onload = (e) => setSelectedImage(e.target?.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -47,8 +39,7 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
       const fireworksService = new FireworksAIService();
       const result = await fireworksService.analyzeFoodImage(selectedImage, profile);
       
-      if (result) {
-        // Create food analysis item
+      if (result && result.foodName && result.foodName.toLowerCase() !== 'unknown') {
         const analysisItem: FoodAnalysisItem = {
           id: crypto.randomUUID(),
           date: new Date().toISOString(),
@@ -56,110 +47,74 @@ const ChatFoodAnalyzer: React.FC<ChatFoodAnalyzerProps> = ({ onAnalysisComplete 
           ...result
         };
         
-        // Add to history
         addFoodAnalysis(analysisItem);
-        
-        // Call the callback to display results in chat
-        onAnalysisComplete(analysisItem);
-        
-        // Clear the image
+        onAnalysisComplete(analysisItem); // Pass the result to the parent
         clearImage();
-        
-        toast.success("Food analysis complete!");
+        notifications.show({ title: "Analysis Complete", message: `Successfully analyzed ${result.foodName}.`, color: "green" });
+      } else {
+         throw new Error("Could not identify the food in the image. Please try a clearer picture.");
       }
     } catch (error: unknown) {
-      console.error('Analysis failed:', error);
-      let errorMessage = "Failed to analyze food";
-      if (error instanceof Error && error.message) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      toast.error(errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      notifications.show({ title: "Analysis Failed", message: errorMessage, color: "red" });
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   return (
-    <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          <p className="text-nari-text text-sm hover:text-nari-text">
-            Take a photo of your meal to analyze its PCOS compatibility
-          </p>
-          
-          <div className="flex justify-center">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            
-            {!selectedImage ? (
+    <Stack>
+      <Text size="sm" c="dimmed">
+        Take or upload a photo of your meal to get instant feedback.
+      </Text>
+      
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+      />
+      
+      {!selectedImage ? (
+          <Center 
+              p="xl"
+              style={{border: '2px dashed var(--mantine-color-gray-3)', borderRadius: 'var(--mantine-radius-md)'}}
+          >
               <Button 
                 onClick={() => fileInputRef.current?.click()} 
-                className="bg-nari-primary hover:bg-nari-primary/90 flex items-center gap-2"
-                size="sm"
+                variant="light"
+                color="pink"
+                leftSection={<IconCamera size={16} />}
               >
-                <Camera className="h-4 w-4" />
-                Take Photo
+                Take or Upload Photo
               </Button>
-            ) : (
-              <div className="w-full space-y-3">
-                <div className="relative w-full max-w-xs mx-auto">
-                  <img 
-                    src={selectedImage} 
-                    alt="Food to analyze" 
-                    className="w-full rounded-md shadow-sm" 
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="absolute top-1 right-1 h-6 w-6 bg-background/90 backdrop-blur-sm"
-                    onClick={clearImage}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-                
-                <div className="flex gap-2 justify-center">
-                  <Button 
-                    onClick={analyzeFood} 
-                    className="bg-nari-primary hover:bg-nari-primary/90 flex-1 max-w-32"
-                    size="sm"
-                    disabled={isAnalyzing}
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Analyze Food
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => fileInputRef.current?.click()}
-                    size="sm"
-                    disabled={isAnalyzing}
-                  >
-                    <Camera className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </Center>
+      ) : (
+        <Stack align="center" gap="md">
+          <Image 
+            src={selectedImage} 
+            alt="Food to analyze" 
+            radius="md"
+            maw={250}
+          />
+          <Group>
+             <Button variant="default" onClick={clearImage} leftSection={<IconTrash size={14} />}>
+                Clear
+              </Button>
+              <Button 
+                onClick={analyzeFood} 
+                loading={isAnalyzing}
+                loaderProps={{type: 'dots'}}
+                leftSection={<IconToolsKitchen2 size={14} />}
+              >
+                Analyze
+              </Button>
+          </Group>
+        </Stack>
+      )}
+    </Stack>
   );
 };
 

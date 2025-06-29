@@ -6,83 +6,86 @@
 
 @layer base {
   :root {
-    --background: 204 20% 98%; /* Nari Secondary: #F7F9FA */
-    --foreground: 210 12% 23%; /* Nari Text Main: #333D47 */
+    --background: 0 0% 100%; /* White */
+    --foreground: 220 15% 20%; /* Darker text for better contrast */
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 12% 23%; /* Nari Text Main */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 220 15% 20%; /* Darker text for better contrast */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 12% 23%; /* Nari Text Main */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 220 15% 20%; /* Darker text for better contrast */
 
-    --primary: 179 35% 45%;        /* Nari Primary: #4A9D9C */
-    --primary-foreground: 0 0% 100%; /* White text on Nari Primary */
+    --primary: 335 75% 55%;        /* Main Pink - slightly darker for better contrast */
+    --primary-foreground: 0 0% 100%; /* White text on Primary Pink */
 
-    --secondary: 4 100% 69%;       /* Nari Accent: #FF7062 */
-    --secondary-foreground: 0 0% 100%; /* White text on Nari Accent */
+    --secondary: 335 60% 95%;       /* Very Light Pink */
+    --secondary-foreground: 220 15% 25%; /* Dark text on Light Pink */
 
-    --muted: 210 10% 60%;         /* Nari Text Muted: #768595 (approx HSL) */
-    --muted-foreground: 210 10% 45%; /* Lighter text for on muted background - MADE DARKER */
+    --muted: 210 40% 96%;         /* Light neutral background */
+    --muted-foreground: 220 15% 45%; /* Medium gray text */
 
-    --accent: 4 100% 69%;           /* Nari Accent: #FF7062 */
-    --accent-foreground: 0 0% 100%;  /* White text on Nari Accent */
+    --accent: 335 70% 50%;           /* Deeper/Saturated Pink */
+    --accent-foreground: 0 0% 100%;  /* White text on Accent Pink */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 55%; /* Red - slightly darker for better contrast */
+    --destructive-foreground: 0 0% 100%; /* White text on Red */
 
-    --border: 204 10% 85%; /* Adjusted border color */
-    --input: 204 10% 90%;  /* Adjusted input background */
-    --ring: 179 35% 45%;   /* Nari Primary for focus rings */
+    --border: 220 13% 91%; /* Light neutral border */
+    --input: 0 0% 100%;  /* White input background */
+    --ring: 335 75% 55%;   /* Main Pink for focus rings */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 260 10% 10%;
-    --sidebar-primary: 260 100% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 20% 96%;
-    --sidebar-accent-foreground: 260 10% 10%;
-    --sidebar-border: 260 30% 90%;
-    --sidebar-ring: 260 100% 65%;
+    /* Sidebar - improved contrast */
+    --sidebar-background: 0 0% 98%; /* Very light neutral */
+    --sidebar-foreground: 220 15% 25%;   /* Dark text */
+    --sidebar-primary: 335 75% 55%;      /* Primary Pink */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 335 60% 95%;       /* Light Pink for hover */
+    --sidebar-accent-foreground: 220 15% 25%; /* Dark text */
+    --sidebar-border: 220 13% 87%;      /* Light border */
+    --sidebar-ring: 335 75% 55%;        /* Primary Pink for focus */
   }
 
   .dark {
-    --background: 210 12% 10%; /* Darker background */
-    --foreground: 204 20% 98%; /* Nari Secondary (Light Gray) for text */
+    /* Dark Theme with better contrast */
+    --background: 220 15% 12%; /* Dark neutral background */
+    --foreground: 0 0% 95%; /* Very light text */
 
-    --card: 210 12% 15%;
-    --card-foreground: 204 20% 98%; 
+    --card: 220 15% 16%; /* Dark card background */
+    --card-foreground: 0 0% 95%; /* Light text */
 
-    --popover: 210 12% 15%;
-    --popover-foreground: 204 20% 98%;
+    --popover: 220 15% 16%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 179 35% 45%; 
-    --primary-foreground: 0 0% 100%; 
+    --primary: 335 75% 65%; /* Brighter pink for dark mode */
+    --primary-foreground: 220 15% 12%; /* Dark text on bright pink */
 
-    --secondary: 4 100% 69%; 
-    --secondary-foreground: 0 0% 100%; 
+    --secondary: 220 15% 20%; /* Dark secondary */
+    --secondary-foreground: 0 0% 90%; /* Light text */
 
-    --muted: 210 10% 30%;
-    --muted-foreground: 210 10% 70%;
+    --muted: 220 15% 18%; /* Dark muted background */
+    --muted-foreground: 0 0% 65%; /* Medium light text */
 
-    --accent: 4 100% 69%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 335 75% 60%; /* Accent pink */
+    --accent-foreground: 220 15% 12%; /* Dark text on accent */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 75% 65%; /* Brighter red for dark mode */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 12% 25%;
-    --input: 210 12% 20%;
-    --ring: 179 35% 45%;
+    --border: 220 15% 25%; /* Dark border */
+    --input: 220 15% 18%;  /* Dark input background */
+    --ring: 335 75% 65%;   /* Bright pink focus ring */
     
-    --sidebar-background: 260 15% 15%;
-    --sidebar-foreground: 260 10% 95%;
-    --sidebar-primary: 260 100% 70%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 15% 20%;
-    --sidebar-accent-foreground: 260 10% 95%;
-    --sidebar-border: 260 15% 25%;
-    --sidebar-ring: 260 100% 70%;
+    /* Dark Sidebar */
+    --sidebar-background: 220 15% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 335 75% 65%;
+    --sidebar-primary-foreground: 220 15% 12%;
+    --sidebar-accent: 220 15% 18%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 220 15% 22%;
+    --sidebar-ring: 335 75% 65%;
   }
 }
 
@@ -122,12 +125,12 @@
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-nari-primary to-nari-accent;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))];
 }
 
 /* Custom focus style for inputs using Nari AI accent color */
 .pcos-input-focus:focus-visible {
-  outline: 2px solid #FF7062 !important; /* Nari Accent */
+  outline: 2px solid hsl(var(--ring)) !important; /* Use theme ring color */
   outline-offset: 2px;
   border-color: transparent !important; /* Hide default browser focus border if any */
 }

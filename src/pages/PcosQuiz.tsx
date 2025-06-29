@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { Toggle } from '@/components/ui/toggle';
+import { Button, Radio, TextInput, Progress, Container, Stack, Text, Title, Card, Group, Checkbox } from '@mantine/core';
 import { useUser } from '@/contexts/UserContext';
 
 // Define the structure for your quiz questions
@@ -120,60 +115,96 @@ const PcosQuiz: React.FC = () => {
   const progress = ((currentStep + 1) / quizQuestions.length) * 100;
 
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg my-10">
-      <h2 className="text-2xl font-bold text-gray-700 mb-2">Step {currentQuestion.step}: {currentQuestion.title}</h2>
-      <Progress value={progress} className="mb-6" />
-      
-      <div className="mb-8">
-        <p className="text-lg text-gray-800 mb-4">{currentQuestion.question}</p>
-        {currentQuestion.type === 'number' && (
-          <Input
-            type="number"
-            value={answers[currentQuestion.key] || ''}
-            onChange={(e) => handleAnswerChange(currentQuestion.key, e.target.value)}
-            className="max-w-xs"
-          />
-        )}
-        {currentQuestion.type === 'radio' && (
-          <RadioGroup onValueChange={(value) => handleAnswerChange(currentQuestion.key, value)} value={answers[currentQuestion.key]}>
-            {currentQuestion.options?.map((option) => (
-              <div key={option} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={option} />
-                <Label htmlFor={option}>{option}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        )}
-        {currentQuestion.type === 'toggle' && (
-          <div className="space-y-2">
-            {currentQuestion.options?.map((option) => (
-              <Toggle
-                key={option}
-                pressed={((answers[currentQuestion.key] as string[]) || []).includes(option)}
-                onPressedChange={(pressed) => handleToggleChange(currentQuestion.key, option, pressed)}
-                className="justify-start h-auto p-3 text-left data-[state=on]:bg-blue-500 data-[state=on]:text-white hover:bg-blue-50 w-full"
+    <Container 
+      style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 1))'
+      }} 
+      p="md"
+    >
+      <Card 
+        style={{ width: '100%', maxWidth: 700 }} 
+        shadow="xl" 
+        padding="xl" 
+        radius="md"
+      >
+        <Stack gap="xl">
+          <Group justify="space-between" align="center">
+            <Title order={2} size="xl">
+              Step {currentQuestion.step}: {currentQuestion.title}
+            </Title>
+            <Text size="sm" c="dimmed">
+              {currentStep + 1} of {quizQuestions.length}
+            </Text>
+          </Group>
+          
+          <Progress value={progress} color="pink" size="sm" />
+          
+          <Stack gap="md">
+            <Text size="lg" fw={500}>{currentQuestion.question}</Text>
+            
+            {currentQuestion.type === 'number' && (
+              <TextInput
+                type="number"
+                value={answers[currentQuestion.key] || ''}
+                onChange={(e) => handleAnswerChange(currentQuestion.key, e.currentTarget.value)}
+                style={{ maxWidth: 300 }}
+              />
+            )}
+            
+            {currentQuestion.type === 'radio' && (
+              <Radio.Group 
+                value={answers[currentQuestion.key]} 
+                onChange={(value) => handleAnswerChange(currentQuestion.key, value)}
               >
-                {option}
-              </Toggle>
-            ))}
-          </div>
-        )}
-      </div>
-      {errors[currentQuestion.key] && (
-        <p className="text-red-500 text-sm mt-2">{errors[currentQuestion.key]}</p>
-      )}
+                <Stack gap="xs">
+                  {currentQuestion.options?.map((option) => (
+                    <Radio key={option} value={option} label={option} color="pink" />
+                  ))}
+                </Stack>
+              </Radio.Group>
+            )}
+            
+            {currentQuestion.type === 'toggle' && (
+              <Stack gap="xs">
+                {currentQuestion.options?.map((option) => (
+                  <Checkbox
+                    key={option}
+                    label={option}
+                    checked={((answers[currentQuestion.key] as string[]) || []).includes(option)}
+                    onChange={(event) => handleToggleChange(currentQuestion.key, option, event.currentTarget.checked)}
+                    color="pink"
+                  />
+                ))}
+              </Stack>
+            )}
+            
+            {errors[currentQuestion.key] && (
+              <Text size="sm" c="red">{errors[currentQuestion.key]}</Text>
+            )}
+          </Stack>
 
-      <div className="flex justify-between">
-        <Button onClick={prevStep} disabled={currentStep === 0} variant="outline">
-          Previous
-        </Button>
-        {currentStep < quizQuestions.length - 1 ? (
-          <Button onClick={nextStep}>Next</Button>
-        ) : (
-          <Button onClick={handleSubmit}>Finish & See Results</Button>
-        )}
-      </div>
-    </div>
+          <Group justify="space-between">
+            <Button 
+              onClick={prevStep} 
+              disabled={currentStep === 0} 
+              variant="outline"
+              color="pink"
+            >
+              Previous
+            </Button>
+            {currentStep < quizQuestions.length - 1 ? (
+              <Button onClick={nextStep} color="pink">Next</Button>
+            ) : (
+              <Button onClick={handleSubmit} color="pink">Finish & See Results</Button>
+            )}
+          </Group>
+        </Stack>
+      </Card>
+    </Container>
   );
 };
 

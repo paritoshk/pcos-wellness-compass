@@ -1,155 +1,95 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Send, Camera } from "lucide-react";
+import { Button, TextInput, Stack, Group, Box, Text, ScrollArea, Avatar, Paper, Modal, Container, Center } from "@mantine/core";
+import { IconSend, IconCamera } from "@tabler/icons-react";
 import { useUser, PCOSProfile, FoodAnalysisItem } from '@/contexts/UserContext';
-import { useLocation } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
 import { FireworksAIService } from '@/services/fireworksAI';
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type?: 'text' | 'food-analysis';
   foodAnalysis?: FoodAnalysisItem;
 }
 
 const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
-  const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : 
-                            foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
-  
+  if (!foodAnalysis || !foodAnalysis.foodName) {
+    return "I'm sorry, I couldn't analyze that food properly. Could you please try again?";
+  }
+  const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
   const baseResponse = `I've analyzed your ${foodAnalysis.foodName}. It has ${compatibilityLevel} compatibility (${foodAnalysis.pcosCompatibility}%) with your PCOS management plan.\n\n`;
-  
   const nutritionInfo = `Nutritional breakdown: ${foodAnalysis.nutritionalInfo.carbs}g carbs, ${foodAnalysis.nutritionalInfo.protein}g protein, ${foodAnalysis.nutritionalInfo.fats}g fats. It has a ${foodAnalysis.nutritionalInfo.glycemicLoad.toLowerCase()} glycemic load and is ${foodAnalysis.nutritionalInfo.inflammatoryScore.toLowerCase()} in terms of inflammation.\n\n`;
-  
   const recommendation = `${foodAnalysis.recommendation}\n\n`;
-  
   let alternativesText = "";
   if (foodAnalysis.pcosCompatibility < 80 && foodAnalysis.alternatives && foodAnalysis.alternatives.length > 0) {
-    alternativesText = `Here are some better alternatives you might consider:\n` + 
-      foodAnalysis.alternatives.map((alt: string) => `• ${alt}`).join('\n');
+    alternativesText = `Here are some better alternatives you might consider:\n` + foodAnalysis.alternatives.map((alt: string) => `• ${alt}`).join('\n');
   }
-  
   return baseResponse + nutritionInfo + recommendation + alternativesText;
 };
 
 const CHAT_MESSAGES_STORAGE_KEY = 'pcosChatMessages';
-
-interface StoredMessage extends Omit<Message, 'timestamp'> {
-  timestamp: string;
-}
+interface StoredMessage extends Omit<Message, 'timestamp'> { timestamp: string; }
 
 const ChatInterface: React.FC = () => {
   const { profile } = useUser();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>(() => {
-    const savedMessages = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
-    if (savedMessages) {
-      return JSON.parse(savedMessages).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)}));
-    }
-    return [];
+    const saved = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
+    return saved ? JSON.parse(saved).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)})) : [];
   });
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showFoodAnalyzer, setShowFoodAnalyzer] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const [analyzerOpened, setAnalyzerOpened] = useState(false);
+  const viewport = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const fireworksAIService = useRef(new FireworksAIService()).current;
 
+  const scrollToBottom = () => viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' });
+  useEffect(scrollToBottom, [messages]);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-        localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-    } else {
-        localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY);
-    }
-  }, [messages]);
-
   useEffect(() => {
     if (messages.length === 0 && profile.name) {
-      const initialGreeting: Message = {
-          id: '1',
-          role: 'assistant',
-          content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
-          timestamp: new Date()
-        };
-      setMessages([initialGreeting]);
+      setMessages([{
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
+        timestamp: new Date()
+      }]);
     }
+  }, [profile.name]);
 
-    const foodAnalysisFromState = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
-    if (foodAnalysisFromState) {
-      const foodAnalysis = foodAnalysisFromState;
-      const userFoodMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: `I want to share the analysis of my ${foodAnalysis.foodName} with you.`,
-        timestamp: new Date(),
-        type: 'food-analysis',
-        foodAnalysis: foodAnalysis
-      };
-      setMessages(prev => [...prev, userFoodMessage]); 
-      setIsTyping(true);
-      setTimeout(() => {
-        const assistantFoodMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: getFoodAnalysisResponse(foodAnalysis),
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, assistantFoodMessage]);
-        setIsTyping(false);
-      }, 1500);
-      window.history.replaceState({}, document.title);
+  useEffect(() => {
+    const foodAnalysis = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
+    if (foodAnalysis) {
+      navigate(location.pathname, { replace: true, state: {} });
+      const userFoodMessage: Message = { id: crypto.randomUUID(), role: 'user', content: `I've analyzed my ${foodAnalysis.foodName}. Can you give me feedback?`, timestamp: new Date(), foodAnalysis };
+      const assistantFoodMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: getFoodAnalysisResponse(foodAnalysis), timestamp: new Date() };
+      setMessages(prev => [...prev, userFoodMessage, assistantFoodMessage]);
     }
-  }, [location.state?.foodAnalysis, profile.name, messages.length, location.state]);
+  }, [location.state, navigate]);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: currentMessage,
-      timestamp: new Date()
-    };
-    
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: currentMessage, timestamp: new Date() };
     const newMessagesState = [...messages, userMessage];
     setMessages(newMessagesState);
     setCurrentMessage('');
     setIsTyping(true);
 
-    const conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = newMessagesState
-      .filter(msg => msg.role === 'user' || msg.role === 'assistant') 
-      .map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content }));
-
-    const aiResponseContent = await fireworksAIService.getChatResponse(conversationHistory, profile as PCOSProfile);
-
-    if (aiResponseContent) {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiResponseContent,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-    } else {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm having a little trouble thinking right now. Could you try asking again?",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+    const conversationHistory = newMessagesState.map(msg => ({ role: msg.role, content: msg.content }));
+    try {
+      const aiResponseContent = await fireworksAIService.getChatResponse(conversationHistory, profile as PCOSProfile);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: aiResponseContent || "I'm having a little trouble thinking. Please try again.", timestamp: new Date() }]);
+    } catch (error) {
+       console.error("Error fetching AI response:", error);
+       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: "Sorry, I encountered an error and couldn't process your message.", timestamp: new Date() }]);
+    } finally {
+      setIsTyping(false);
     }
-    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -159,162 +99,51 @@ const ChatInterface: React.FC = () => {
     }
   };
   
-  const handleFoodAnalysis = (foodAnalysis: FoodAnalysisItem) => {
-    setShowFoodAnalyzer(false);
-    
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: `I've analyzed my ${foodAnalysis.foodName}.`,
-      timestamp: new Date(),
-      type: 'food-analysis',
-      foodAnalysis: foodAnalysis
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    setIsTyping(true);
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: getFoodAnalysisResponse(foodAnalysis),
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const renderFoodAnalysisMessage = (message: Message) => {
-    if (!message.foodAnalysis) return null;
-    
-    const foodAnalysis = message.foodAnalysis;
-    
-    return (
-      <div className="mb-2 mt-1">
-        <div className="flex gap-3">
-          {foodAnalysis.imageUrl && (
-            <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
-              <img 
-                src={foodAnalysis.imageUrl} 
-                alt={foodAnalysis.foodName} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div className="space-y-2">
-            <div className="font-medium">{foodAnalysis.foodName}</div>
-            
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <span>PCOS Compatibility: {foodAnalysis.pcosCompatibility}%</span>
-                <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      foodAnalysis.pcosCompatibility > 70 ? "bg-green-500" : 
-                      foodAnalysis.pcosCompatibility > 40 ? "bg-yellow-500" : 
-                      "bg-red-500"
-                    }`}
-                    style={{ width: `${foodAnalysis.pcosCompatibility}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="flex flex-col h-full p-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-poppins font-semibold text-foreground mb-2">Chat with Nari</h1>
-        <p className="text-muted-foreground">Your personal PCOS wellness assistant</p>
-      </div>
-      
-      {showFoodAnalyzer && (
-        <ChatFoodAnalyzer onAnalysisComplete={handleFoodAnalysis} />
-      )}
-      
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-        {messages.map((message) => (
-          <div 
-            key={message.id} 
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <Card 
-              className={`max-w-[80%] ${ 
-                message.role === 'user' 
-                  ? 'bg-nari-primary text-white'
-                  : 'bg-white text-nari-text-main'
-              }`}
-            >
-              <CardContent className="p-3">
-                {message.type === 'food-analysis' && renderFoodAnalysisMessage(message)}
-                <p className={`whitespace-pre-wrap ${
-                  message.role === 'assistant' ? 'text-nari-text-main' : ''
-                }`}>{message.content}</p>
-                <div 
-                  className={`text-xs mt-1 ${ 
-                    message.role === 'user' 
-                      ? 'text-white/70' 
-                      : 'text-nari-text-muted'
-                  }`}
-                >
-                  {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ))}
-        
-        {isTyping && (
-          <div className="flex justify-start">
-            <Card className="bg-muted max-w-[80%]">
-              <CardContent className="p-3">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse"></div>
-                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse delay-100"></div>
-                  <div className="w-2 h-2 rounded-full bg-nari-primary animate-pulse delay-200"></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-      
-      <div className="flex gap-2 sticky bottom-0 bg-background/95 backdrop-blur-sm pt-2">
-        <Button 
-          variant="outline"
-          size="icon"
-          onClick={() => setShowFoodAnalyzer(!showFoodAnalyzer)}
-          className={`bg-white border-nari-accent text-nari-accent hover:bg-nari-accent/10 ${
-            showFoodAnalyzer ? 'bg-nari-accent/20 border-nari-accent' : ''
-          }`}
-        >
-          <Camera className="h-4 w-4" />
-        </Button>
-        <Input
-          placeholder="Type your message..."
-          value={currentMessage}
-          onChange={(e) => setCurrentMessage(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="flex-1 pcos-input-focus bg-white text-nari-text-main placeholder:text-nari-text-muted/70 border-nari-accent/50"
-        />
-        <Button 
-          onClick={handleSendMessage} 
-          disabled={!currentMessage.trim() || isTyping}
-          className="bg-nari-primary hover:bg-nari-primary/90"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    <Container size="md" h="calc(100vh - 6rem - 2 * var(--mantine-spacing-md))">
+      <Modal opened={analyzerOpened} onClose={() => setAnalyzerOpened(false)} title="Analyze Food" centered>
+        <ChatFoodAnalyzer onAnalysisComplete={(analysis) => {
+          setAnalyzerOpened(false);
+          const userFoodMessage: Message = { id: crypto.randomUUID(), role: 'user', content: `I've analyzed my ${analysis.foodName}. Can you give me feedback?`, timestamp: new Date(), foodAnalysis: analysis };
+          const assistantFoodMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: getFoodAnalysisResponse(analysis), timestamp: new Date() };
+          setMessages(prev => [...prev, userFoodMessage, assistantFoodMessage]);
+        }} />
+      </Modal>
+
+      <Stack h="100%" gap="md">
+        <Box>
+            <Text component="h1" size="xl" fw={700}>Chat with Nari</Text>
+            <Text c="dimmed">Your personal PCOS wellness assistant</Text>
+        </Box>
+        <ScrollArea viewportRef={viewport} style={{ flex: 1 }}>
+            <Stack gap="lg" p="sm">
+                {messages.map((message) => (
+                  <Group key={message.id} wrap="nowrap" gap="sm" style={{ alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      {message.role === 'assistant' && <Avatar color="pink" radius="xl">N</Avatar>}
+                      <Paper 
+                        shadow="sm" p="md" radius="lg" withBorder={message.role === 'assistant'}
+                        style={{ maxWidth: '90%', backgroundColor: message.role === 'user' ? 'var(--mantine-color-pink-6)' : 'white', color: message.role === 'user' ? 'white' : 'black' }}>
+                          {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
+                          <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                          <Text size="xs" mt={4} style={{ opacity: 0.7, textAlign: 'right' }}>{message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+                      </Paper>
+                  </Group>
+                ))}
+                {isTyping && <Group><Avatar color="pink" radius="xl">N</Avatar><Text c="dimmed">Nari is typing...</Text></Group>}
+            </Stack>
+        </ScrollArea>
+        <Group gap="sm" wrap="nowrap">
+            <Button variant="default" size="lg" onClick={() => setAnalyzerOpened(true)} aria-label="Analyze food"><IconCamera size={20} /></Button>
+            <TextInput
+              placeholder="Type your message..." value={currentMessage} onChange={(e) => setCurrentMessage(e.target.value)}
+              onKeyDown={handleKeyPress} radius="xl" size="lg" style={{ flex: 1 }}
+              rightSection={
+                <Button onClick={handleSendMessage} disabled={!currentMessage.trim() || isTyping} variant="filled" color="pink" is-icon radius="xl" aria-label="Send message"><IconSend size={20} /></Button>
+              }
+            />
+        </Group>
+      </Stack>
+    </Container>
   );
 };
 
