@@ -9,6 +9,7 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import { BrowserRouter, useNavigate } from 'react-router-dom'
+import { Center, Stack, Title, Text } from '@mantine/core'
 
 console.log('main.tsx: Script start') // Early log
 
@@ -39,34 +40,37 @@ const theme = createTheme({
 
 const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate()
-
-  const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN
-  const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID
-  const redirectUri = import.meta.env.VITE_APP_URL
-
-  if (!(auth0Domain && auth0ClientId && redirectUri)) {
-    return (
-      <div style={{ padding: '20px', fontFamily: 'sans-serif', color: 'red' }}>
-        <h1>Configuration Error</h1>
-        <p>Auth0 Domain, Client ID, or App URL is missing from your .env file.</p>
-        <p>Please ensure VITE_APP_URL is set (e.g., VITE_APP_URL=http://localhost:8080).</p>
-      </div>
-    )
-  }
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
 
   const onRedirectCallback = (appState?: AppState) => {
-    // Use the `returnTo` from appState or default to the root page
-    navigate(appState?.returnTo || '/')
+    navigate(appState?.returnTo || window.location.pathname)
+  }
+
+  // Use Vercel's system env var for preview URLs, otherwise default to localhost
+  const appUrl = import.meta.env.VITE_VERCEL_URL
+    ? `https://${import.meta.env.VITE_VERCEL_URL}`
+    : 'http://localhost:8080'
+
+  if (!domain || !clientId) {
+    return (
+      <Center h="100vh">
+        <Stack align="center">
+          <Title order={2} c="red">Configuration Error</Title>
+          <Text>Auth0 Domain or Client ID is missing from your .env file.</Text>
+        </Stack>
+      </Center>
+    )
   }
 
   return (
     <Auth0Provider
-      domain={auth0Domain}
-      clientId={auth0ClientId}
-      onRedirectCallback={onRedirectCallback}
+      domain={domain}
+      clientId={clientId}
       authorizationParams={{
-        redirect_uri: redirectUri,
+        redirect_uri: `${appUrl}/chat`
       }}
+      onRedirectCallback={onRedirectCallback}
     >
       {children}
     </Auth0Provider>
