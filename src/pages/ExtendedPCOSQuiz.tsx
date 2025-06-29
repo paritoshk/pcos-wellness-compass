@@ -54,7 +54,7 @@ const ExtendedPCOSQuiz: React.FC<ExtendedPCOSQuizProps> = ({ onComplete }) => {
     }
   };
   
-  const handleValueChange = (field: keyof PCOSProfile, value: any) => {
+  const handleValueChange = (field: keyof PCOSProfile, value: PCOSProfile[keyof PCOSProfile]) => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
 

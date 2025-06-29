@@ -3,14 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Camera, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
-import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
+import { useUser, FoodAnalysisItem, Message } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
 // Get real chat history from localStorage
-const getChatHistory = () => {
+const getChatHistory = (): Message[] => {
   try {
     const stored = localStorage.getItem('nari-chat-messages');
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    // The chat messages are stored with string timestamps, so we need to convert them back to Date objects
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.map(msg => ({...msg, timestamp: new Date(msg.timestamp)})) : [];
   } catch {
     return [];
   }
@@ -97,8 +100,8 @@ const HistoryLog: React.FC = () => {
         <TabsContent value="chats">
           {chatHistory.length > 0 ? (
             <div className="space-y-4">
-              {chatHistory.map((message: any, index: number) => (
-                <HistoryItem key={index} date={message.timestamp}>
+              {chatHistory.map((message, index: number) => (
+                <HistoryItem key={index} date={message.timestamp.toISOString()}>
                   <div className="space-y-4">
                     <div className="text-sm">
                       <div className="font-medium">

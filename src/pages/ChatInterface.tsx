@@ -54,7 +54,7 @@ const ChatInterface: React.FC = () => {
         timestamp: new Date()
       }]);
     }
-  }, [profile.name]);
+  }, [profile.name, messages.length]);
 
   useEffect(() => {
     const foodAnalysis = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
@@ -64,7 +64,7 @@ const ChatInterface: React.FC = () => {
       const assistantFoodMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: getFoodAnalysisResponse(foodAnalysis), timestamp: new Date() };
       setMessages(prev => [...prev, userFoodMessage, assistantFoodMessage]);
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, location.pathname]);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;

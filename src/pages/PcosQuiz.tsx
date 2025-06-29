@@ -63,9 +63,27 @@ const PCOSQuiz: React.FC = () => {
   const nextStep = () => setActive((current) => (current < 6 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
   
-  const handleValueChange = (field: keyof PCOSProfile, value: any) => {
+  const handleValueChange = (field: keyof PCOSProfile, value: string | boolean | string[] |'yes' | 'no') => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
+  
+  const handleNumericValueChange = (field: 'age' | 'weight', value: number | string) => {
+    const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    if (!isNaN(numValue)) {
+      setFormData((current) => ({...current, [field]: numValue}));
+    } else if (value === '') {
+       setFormData((current) => ({...current, [field]: null}));
+    }
+  }
+  
+  const handleHeightChange = (part: 'feet' | 'inches', value: number | string) => {
+      const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+      if (!isNaN(numValue)) {
+          setFormData(current => ({...current, height: {...current.height, [part]: numValue }}));
+      } else if (value === '') {
+           setFormData(current => ({...current, height: {...current.height, [part]: null }}));
+      }
+  }
 
   const handleComplete = () => {
     const result = calculatePcosProbability(formData);
@@ -137,7 +155,7 @@ const PCOSQuiz: React.FC = () => {
               label="What's your age?"
               placeholder="Your age"
               value={formData.age || ''}
-              onChange={(value) => handleValueChange('age', value)}
+              onChange={(value) => handleNumericValueChange('age', value)}
               min={12}
               max={99}
             />
@@ -173,14 +191,14 @@ const PCOSQuiz: React.FC = () => {
               <NumberInput
                 label="Height (feet)"
                 value={formData.height?.feet || ''}
-                onChange={(value) => handleValueChange('height', { ...formData.height, feet: value })}
+                onChange={(value) => handleHeightChange('feet', value)}
                 min={3}
                 max={7}
               />
               <NumberInput
                 label="Height (inches)"
                 value={formData.height?.inches || ''}
-                onChange={(value) => handleValueChange('height', { ...formData.height, inches: value })}
+                onChange={(value) => handleHeightChange('inches', value)}
                 min={0}
                 max={11}
               />
@@ -189,7 +207,7 @@ const PCOSQuiz: React.FC = () => {
               label="What is your current weight (in lbs)?"
               placeholder="Enter your weight"
               value={formData.weight || ''}
-              onChange={(value) => handleValueChange('weight', value)}
+              onChange={(value) => handleNumericValueChange('weight', value)}
               min={50}
               max={700}
             />
