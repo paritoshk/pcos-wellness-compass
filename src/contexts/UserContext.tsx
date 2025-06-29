@@ -25,6 +25,12 @@ export interface PCOSProfile {
   MetabolicRiskScore?: number | null; // e.g., 1-10
   HormonalImbalanceIndicators?: string[];
   PersonalizedFocusAreas?: string[];
+  // Extended Quiz Data
+  diagnosedConditions?: string[];
+  familyHistory?: string[];
+  medications?: string[];
+  stressLevel?: 'low' | 'moderate' | 'high' | null;
+  isTryingToConceive?: 'yes' | 'no' | 'not_sure' | null;
 }
 
 export interface FoodAnalysisItem {
@@ -42,6 +48,14 @@ export interface FoodAnalysisItem {
   };
   recommendation: string;
   alternatives: string[];
+}
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  foodAnalysis?: FoodAnalysisItem;
 }
 
 interface UserContextType {
@@ -74,6 +88,11 @@ const defaultProfile: PCOSProfile = {
   MetabolicRiskScore: null,
   HormonalImbalanceIndicators: [],
   PersonalizedFocusAreas: [],
+  diagnosedConditions: [],
+  familyHistory: [],
+  medications: [],
+  stressLevel: null,
+  isTryingToConceive: null,
 };
 
 const UserContext = createContext<UserContextType>({
@@ -90,12 +109,10 @@ const UserContext = createContext<UserContextType>({
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ALL Hooks must be called at the top level, before any conditional returns.
   const { user, isAuthenticated, isLoading, logout: auth0Logout } = useAuth0();
   const navigate = useNavigate();
   
   const [profile, setProfile] = useState<PCOSProfile>(() => {
-    console.log('UserProvider: Initializing profile from localStorage or default');
     const savedProfile = localStorage.getItem('pcosProfile');
     return savedProfile ? JSON.parse(savedProfile) : { ...defaultProfile };
   });
@@ -105,30 +122,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-    console.log('UserProvider: Auth0 useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user name:', user?.name, 'profile.completedQuiz:', profile.completedQuiz);
-    if (!isLoading && isAuthenticated && user && !profile.completedQuiz && !profile.name) {
-      console.log('UserProvider: Auth0 user identified, profile not complete, setting guest name from Auth0');
-      setProfile(prev => ({
-        ...prev,
-        name: user.name || user.nickname || 'Auth0 User',
-      }));
-    }
-  }, [isLoading, isAuthenticated, user, profile.completedQuiz, profile.name]);
-
-  useEffect(() => {
-    // This effect reliably clears local data when the user is no longer authenticated.
-    if (!isLoading && !isAuthenticated) {
-      console.log("UserProvider: Auth state is not authenticated. Clearing profile and history.");
-      setProfile(defaultProfile);
-      setFoodAnalysisHistory([]);
-      localStorage.removeItem('pcosProfile');
-      localStorage.removeItem('foodAnalysisHistory');
-    }
-  }, [isAuthenticated, isLoading]);
-
   const updateProfile = useCallback((data: Partial<PCOSProfile>) => {
-    console.log('UserProvider: updateProfile called with:', data);
     setProfile((prev) => {
       const updatedProfile = { ...prev, ...data };
       localStorage.setItem('pcosProfile', JSON.stringify(updatedProfile));
@@ -145,28 +139,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logoutUser = useCallback(() => {
-    console.log('UserProvider: logoutUser called. Initiating Auth0 logout.');
     auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   }, [auth0Logout]);
 
   useEffect(() => {
-    if(profile.name || profile.completedQuiz) { 
-      console.log('UserProvider: Persisting profile to localStorage:', profile);
-      localStorage.setItem('pcosProfile', JSON.stringify(profile));
+    if (isAuthenticated && user && !profile.name) {
+      updateProfile({ name: user.name || user.nickname || 'Wellness Warrior' });
     }
-  }, [JSON.stringify(profile)]);
+  }, [isAuthenticated, user, profile.name, updateProfile]);
 
-  // Now, the conditional return for isLoading is AFTER all hook calls.
-  console.log('UserProvider: Auth0 state before isLoading check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setProfile(defaultProfile);
+      setFoodAnalysisHistory([]);
+      localStorage.removeItem('pcosProfile');
+      localStorage.removeItem('foodAnalysisHistory');
+    }
+  }, [isAuthenticated, isLoading]);
+
   if (isLoading) {
-    console.log("UserProvider: Auth0 is loading. Returning null to prevent further rendering until auth is resolved.");
     return null; 
   }
 
-  // This calculation must also be after the isLoading check, or if profile might not be fully initialized.
   const isProfileComplete = profile.completedQuiz;
-  console.log('UserProvider: isProfileComplete calculated as:', isProfileComplete, 'based on profile.completedQuiz:', profile.completedQuiz);
-  console.log('UserProvider: Rendering context with profile:', profile, 'isProfileComplete:', isProfileComplete);
 
   return (
     <UserContext.Provider value={{ 
@@ -176,7 +171,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       foodAnalysisHistory, 
       addFoodAnalysis,
       logoutUser,
-      authIsLoading: isLoading, // This will be false here due to the check above
+      authIsLoading: isLoading,
       authIsAuthenticated: isAuthenticated
     }}>
       {children}

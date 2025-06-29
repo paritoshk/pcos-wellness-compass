@@ -63,20 +63,8 @@ const PCOSQuiz: React.FC = () => {
   const nextStep = () => setActive((current) => (current < 6 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleValueChange = (field: keyof PCOSProfile, value: any) => {
     setFormData((current) => ({ ...current, [field]: value }));
-  };
-
-  const handleHeightChange = (type: 'feet' | 'inches', value: string | number) => {
-    const numValue = typeof value === 'string' ? parseInt(value) || 0 : value;
-    setFormData((current) => ({ 
-      ...current, 
-      height: { 
-        feet: type === 'feet' ? numValue : current.height?.feet || 0,
-        inches: type === 'inches' ? numValue : current.height?.inches || 0
-      }
-    }));
   };
 
   const handleComplete = () => {
@@ -88,6 +76,170 @@ const PCOSQuiz: React.FC = () => {
       completedQuiz: true
     });
     nextStep();
+  };
+
+  const renderStepContent = () => {
+    switch (active) {
+      case 0: // Welcome
+        return (
+          <Stack>
+            <Title order={3} mb="md">PCOS Probability Assessment</Title>
+            <Box bg="gray.0" p="md">
+              <Text fw={500} mb="sm">For Informational Purposes Only</Text>
+              <Text size="sm" c="dimmed">This assessment is not a medical diagnosis. The results are based on common PCOS symptoms and risk factors and are intended for educational purposes. Please consult with a qualified healthcare professional for an accurate diagnosis and personalized medical advice.</Text>
+            </Box>
+            <Text size="sm" c="dimmed" mt="xs">
+              Your individual responses are used solely to generate your assessment result and will not be used for medical research or AI model training unless you provide explicit consent in the future.
+            </Text>
+            <Checkbox
+              checked={disclaimerAccepted}
+              onChange={(event) => setDisclaimerAccepted(event.currentTarget.checked)}
+              label="I have read and agree to the terms above."
+              mt="xl"
+              color="pink"
+            />
+          </Stack>
+        );
+      case 1: // Symptoms
+        return (
+          <Stack gap="xl" p="md">
+            <Title order={4}>Your Cycle & Symptoms</Title>
+            <Radio.Group
+              name="periodRegularity"
+              label="How would you describe your periods?"
+              value={formData.periodRegularity || ''}
+              onChange={(value) => handleValueChange('periodRegularity', value)}
+            >
+              <Group mt="xs">
+                <Radio value="regular" label="Regular" color="pink" />
+                <Radio value="irregular" label="Irregular" color="pink" />
+                <Radio value="absent" label="Absent or Infrequent" color="pink" />
+              </Group>
+            </Radio.Group>
+            <Checkbox.Group
+              label="Do you experience any of the following?"
+              value={formData.symptoms || []}
+              onChange={(values) => handleValueChange('symptoms', values)}
+            >
+              <Stack mt="xs" gap="sm">
+                {symptomOptions.map((symptom) => (
+                  <Checkbox key={symptom} value={symptom} label={symptom} color="pink" />
+                ))}
+              </Stack>
+            </Checkbox.Group>
+          </Stack>
+        );
+      case 2: // Medical History
+        return (
+          <Stack gap="xl" p="md">
+            <Title order={4}>Your Medical History</Title>
+            <NumberInput
+              label="What's your age?"
+              placeholder="Your age"
+              value={formData.age || ''}
+              onChange={(value) => handleValueChange('age', value)}
+              min={12}
+              max={99}
+            />
+            <Radio.Group
+              name="insulinResistant"
+              label="Have you been diagnosed with insulin resistance or type 2 diabetes?"
+              value={formData.insulinResistant === null ? '' : String(formData.insulinResistant)}
+              onChange={(value) => handleValueChange('insulinResistant', value === 'true')}
+            >
+              <Group mt="xs">
+                <Radio value="true" label="Yes" color="pink" />
+                <Radio value="false" label="No" color="pink" />
+              </Group>
+            </Radio.Group>
+          </Stack>
+        );
+      case 3: // Physical Health
+        return (
+          <Stack gap="xl" p="md">
+            <Title order={4}>Physical Health</Title>
+            <Radio.Group
+              name="hasBeenDiagnosed"
+              label="Have you ever been officially diagnosed with PCOS by a doctor?"
+              value={formData.hasBeenDiagnosed || ''}
+              onChange={(value) => handleValueChange('hasBeenDiagnosed', value as 'yes' | 'no')}
+            >
+              <Group mt="xs">
+                <Radio value="yes" label="Yes" color="pink" />
+                <Radio value="no" label="No" color="pink" />
+              </Group>
+            </Radio.Group>
+            <Group grow>
+              <NumberInput
+                label="Height (feet)"
+                value={formData.height?.feet || ''}
+                onChange={(value) => handleValueChange('height', { ...formData.height, feet: value })}
+                min={3}
+                max={7}
+              />
+              <NumberInput
+                label="Height (inches)"
+                value={formData.height?.inches || ''}
+                onChange={(value) => handleValueChange('height', { ...formData.height, inches: value })}
+                min={0}
+                max={11}
+              />
+            </Group>
+            <NumberInput
+              label="What is your current weight (in lbs)?"
+              placeholder="Enter your weight"
+              value={formData.weight || ''}
+              onChange={(value) => handleValueChange('weight', value)}
+              min={50}
+              max={700}
+            />
+          </Stack>
+        );
+      case 4: // Lifestyle
+        return (
+          <Stack gap="xl" p="md">
+            <Title order={4}>Lifestyle & Goals</Title>
+            <Radio.Group
+              name="weightManagementGoal"
+              label="Are you currently trying to manage your weight?"
+              value={formData.weightManagementGoal || ''}
+              onChange={(value) => handleValueChange('weightManagementGoal', value)}
+            >
+              <Stack mt="xs">
+                <Radio value="lose" label="Yes, trying to lose weight" color="pink" />
+                <Radio value="gain" label="Yes, trying to gain weight" color="pink" />
+                <Radio value="maintain" label="No, maintaining my current weight" color="pink" />
+                <Radio value="not_focused" label="I'm not focused on weight right now" color="pink" />
+              </Stack>
+            </Radio.Group>
+            <Radio.Group name="primaryGoal" label="What's your primary goal right now?" value={formData.primaryGoal || ''} onChange={(value) => handleValueChange('primaryGoal', value)}>
+              <Stack mt="xs">{goalOptions.map(g => <Radio key={g} value={g} label={g} color="pink" />)}</Stack>
+            </Radio.Group>
+          </Stack>
+        );
+      case 5: // Goals
+        return (
+          <Stack gap="xl" p="md">
+            <Title order={4}>Lifestyle & Goals</Title>
+            <Text c="dimmed" size="sm">
+              Thinking about your health journey, which one of these is most important to you right now?
+            </Text>
+            <Radio.Group
+              name="primaryGoal"
+              value={formData.primaryGoal || ''}
+              onChange={(value) => handleValueChange('primaryGoal', value)}
+            >
+              <Stack mt="xs">
+                {goalOptions.map((goal) => (
+                  <Radio key={goal} value={goal} label={goal} color="pink" />
+                ))}
+              </Stack>
+            </Radio.Group>
+          </Stack>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -110,166 +262,22 @@ const PCOSQuiz: React.FC = () => {
         <Stack gap="xl">
           <Stepper active={active} onStepClick={setActive} color="pink">
             <Stepper.Step label="Welcome" description="Disclaimer">
-              {/* Step 1 Content */}
-              <Title order={3} mb="md">PCOS Probability Assessment</Title>
-              <Box bg="gray.0" p="md">
-                <Text fw={500} mb="sm">For Informational Purposes Only</Text>
-                <Text size="sm" c="dimmed">
-                  This assessment is not a medical diagnosis. The results are based on common PCOS symptoms and risk factors and are intended for educational purposes. Please consult with a qualified healthcare professional for an accurate diagnosis and personalized medical advice.
-                </Text>
-                <Text size="sm" c="dimmed" mt="xs">
-                  Your individual responses are used solely to generate your assessment result and will not be used for medical research or AI model training unless you provide explicit consent in the future.
-                </Text>
-              </Box>
-              <Checkbox
-                checked={disclaimerAccepted}
-                onChange={(event) => setDisclaimerAccepted(event.currentTarget.checked)}
-                label="I have read and agree to the terms above."
-                mt="xl"
-                color="pink"
-              />
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Step label="Symptoms" description="Your experiences">
-              <Stack gap="xl" p="md">
-                <Title order={4}>Your Cycle & Symptoms</Title>
-                <Radio.Group
-                  name="periodRegularity"
-                  label="How would you describe your periods?"
-                  value={formData.periodRegularity || ''}
-                  onChange={(value) => handleValueChange('periodRegularity', value)}
-                >
-                  <Group mt="xs">
-                    <Radio value="regular" label="Regular" color="pink" />
-                    <Radio value="irregular" label="Irregular" color="pink" />
-                    <Radio value="absent" label="Absent or Infrequent" color="pink" />
-                  </Group>
-                </Radio.Group>
-                <Checkbox.Group
-                  label="Do you experience any of the following?"
-                  value={formData.symptoms || []}
-                  onChange={(values) => handleValueChange('symptoms', values)}
-                >
-                  <Stack mt="xs" gap="sm">
-                    {symptomOptions.map((symptom) => (
-                      <Checkbox key={symptom} value={symptom} label={symptom} color="pink" />
-                    ))}
-                  </Stack>
-                </Checkbox.Group>
-              </Stack>
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Step label="Medical History" description="Related conditions">
-              <Stack gap="xl" p="md">
-                <Title order={4}>Your Medical History</Title>
-                <NumberInput
-                  label="What's your age?"
-                  placeholder="Your age"
-                  value={formData.age || ''}
-                  onChange={(value) => handleValueChange('age', value)}
-                  min={12}
-                  max={99}
-                />
-                <Radio.Group
-                  name="insulinResistant"
-                  label="Have you been diagnosed with insulin resistance or type 2 diabetes?"
-                  value={formData.insulinResistant === null ? '' : String(formData.insulinResistant)}
-                  onChange={(value) => handleValueChange('insulinResistant', value === 'true')}
-                >
-                  <Group mt="xs">
-                    <Radio value="true" label="Yes" color="pink" />
-                    <Radio value="false" label="No" color="pink" />
-                  </Group>
-                </Radio.Group>
-              </Stack>
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Step label="Physical Health" description="Measurements">
-              <Stack gap="xl" p="md">
-                <Title order={4}>Physical Health</Title>
-                <Radio.Group
-                  name="hasBeenDiagnosed"
-                  label="Have you ever been officially diagnosed with PCOS by a doctor?"
-                  value={formData.hasBeenDiagnosed || ''}
-                  onChange={(value) => handleValueChange('hasBeenDiagnosed', value as 'yes' | 'no')}
-                >
-                  <Group mt="xs">
-                    <Radio value="yes" label="Yes" color="pink" />
-                    <Radio value="no" label="No" color="pink" />
-                  </Group>
-                </Radio.Group>
-                <Group grow>
-                  <NumberInput
-                    label="Height (feet)"
-                    value={formData.height?.feet || ''}
-                    onChange={(value) => handleHeightChange('feet', value)}
-                    min={3}
-                    max={7}
-                  />
-                  <NumberInput
-                    label="Height (inches)"
-                    value={formData.height?.inches || ''}
-                    onChange={(value) => handleHeightChange('inches', value)}
-                    min={0}
-                    max={11}
-                  />
-                </Group>
-                <NumberInput
-                  label="What is your current weight (in lbs)?"
-                  placeholder="Enter your weight"
-                  value={formData.weight || ''}
-                  onChange={(value) => handleValueChange('weight', value)}
-                  min={50}
-                  max={700}
-                />
-              </Stack>
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Step label="Lifestyle" description="Diet & Goals">
-              <Stack gap="xl" p="md">
-                <Title order={4}>Lifestyle & Diet</Title>
-                <Radio.Group
-                  name="weightManagementGoal"
-                  label="Are you currently trying to manage your weight?"
-                  value={formData.weightManagementGoal || ''}
-                  onChange={(value) => handleValueChange('weightManagementGoal', value)}
-                >
-                  <Stack mt="xs">
-                    <Radio value="lose" label="Yes, trying to lose weight" color="pink" />
-                    <Radio value="gain" label="Yes, trying to gain weight" color="pink" />
-                    <Radio value="maintain" label="No, maintaining my current weight" color="pink" />
-                    <Radio value="not_focused" label="I'm not focused on weight right now" color="pink" />
-                  </Stack>
-                </Radio.Group>
-
-                <Checkbox.Group
-                    label="Do you have any specific dietary preferences?"
-                    description="Select all that apply."
-                    value={formData.dietaryPreferences || []}
-                    onChange={(values) => handleValueChange('dietaryPreferences', values)}
-                  >
-                  <Stack mt="xs">
-                    {dietaryOptions.map((diet) => (
-                      <Checkbox key={diet} value={diet} label={diet} color="pink" />
-                    ))}
-                  </Stack>
-                </Checkbox.Group>
-              </Stack>
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Step label="Goals" description="What matters most">
-              <Stack gap="xl" p="md">
-                <Title order={4}>What's Your Primary Goal?</Title>
-                <Text c="dimmed" size="sm">
-                  Thinking about your health journey, which one of these is most important to you right now?
-                </Text>
-                <Radio.Group
-                  name="primaryGoal"
-                  value={formData.primaryGoal || ''}
-                  onChange={(value) => handleValueChange('primaryGoal', value)}
-                >
-                  <Stack mt="xs">
-                    {goalOptions.map((goal) => (
-                      <Radio key={goal} value={goal} label={goal} color="pink" />
-                    ))}
-                  </Stack>
-                </Radio.Group>
-              </Stack>
+              {renderStepContent()}
             </Stepper.Step>
             <Stepper.Completed>
               <Stack align="center" p="md" gap="lg">

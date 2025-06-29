@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import { Button, Stepper, Container, Card, Stack, Text, Title, Group, Checkbox, Radio, NumberInput, Textarea } from "@mantine/core";
+import { Button, Stepper, Container, Stack, Text, Title, Group, Checkbox, Radio, Textarea, MultiSelect } from "@mantine/core";
 import { useUser, PCOSProfile } from '@/contexts/UserContext';
 
-// This would be a more comprehensive list based on the new questions
-const detailedSymptomOptions = [
-  'Acne', 'Unwanted hair growth (hirsutism)', 'Hair loss (on head)', 'Skin darkening', 'Weight gain',
-  'Extreme stress or anxiety', 'Difficulty conceiving'
+// More detailed questions and options
+const diagnosedConditionsOptions = [
+  { value: 'hypothyroidism', label: 'Hypothyroidism' },
+  { value: 'hyperprolactinemia', label: 'Hyperprolactinemia' },
+  { value: 'diabetes', label: 'Prediabetes or Type 2 Diabetes' },
+  { value: 'none', label: 'None of the above' },
+];
+
+const familyHistoryOptions = [
+  { value: 'pcos', label: 'PCOS' },
+  { value: 'diabetes', label: 'Diabetes' },
+  { value: 'irregular_cycles', label: 'Irregular Cycles' },
+  { value: 'none', label: 'None of the above' },
+];
+
+const medicationOptions = [
+  { value: 'hormonal_birth_control', label: 'Hormonal Birth Control' },
+  { value: 'metformin', label: 'Metformin' },
+  { value: 'spironolactone', label: 'Spironolactone' },
+  { value: 'other', label: 'Other Hormone-Affecting Medication' },
+  { value: 'none', label: 'None of the above' },
 ];
 
 interface ExtendedPCOSQuizProps {
@@ -16,63 +33,103 @@ const ExtendedPCOSQuiz: React.FC<ExtendedPCOSQuizProps> = ({ onComplete }) => {
   const { profile, updateProfile } = useUser();
   const [active, setActive] = useState(0);
   const [formData, setFormData] = useState<Partial<PCOSProfile>>({
-    // Pre-fill with existing data, but allow overriding
     ...profile,
+    // Initialize new fields to avoid uncontrolled component warnings
+    diagnosedConditions: profile.diagnosedConditions || [],
+    familyHistory: profile.familyHistory || [],
+    medications: profile.medications || [],
+    isTryingToConceive: profile.isTryingToConceive || null,
+    stressLevel: profile.stressLevel || null,
   });
 
-  const nextStep = () => setActive((current) => (current < 4 ? current + 1 : current));
+  const nextStep = () => setActive((current) => (current < 3 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleMultiSelectChange = (field: keyof PCOSProfile, values: string[]) => {
+    // If a real option is selected, filter out 'none'. If 'none' is selected, clear other options.
+    if (values.includes('none')) {
+      setFormData((current) => ({ ...current, [field]: ['none'] }));
+    } else {
+      setFormData((current) => ({ ...current, [field]: values.filter(v => v !== 'none') }));
+    }
+  };
+  
   const handleValueChange = (field: keyof PCOSProfile, value: any) => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
 
   const handleComplete = () => {
-    // Here we would eventually call the AI agent function
     console.log("Submitting extended quiz data:", formData);
-    updateProfile({
-      ...formData,
-      completedExtendedQuiz: true,
-    });
+    // TODO: Send `formData` to the new AI agent function for feature engineering
+    updateProfile({ ...formData, completedExtendedQuiz: true });
     onComplete();
   };
 
   return (
     <Container p="md">
       <Stepper active={active} onStepClick={setActive} color="pink" allowNextStepsSelect={false}>
-        {/* We will add all the detailed steps here */}
         <Stepper.Step label="Medical History" description="Diagnoses & Family">
           <Stack p="md" gap="lg">
              <Title order={4}>Medical Background</Title>
              <Text size="sm" c="dimmed">This helps us understand your full health picture.</Text>
-            {/* Example of a new question */}
-             <Checkbox.Group
+             <MultiSelect
                 label="Have you ever been diagnosed with any of the following?"
-                // value={formData.diagnosedConditions || []}
-                // onChange={(values) => handleValueChange('diagnosedConditions', values)}
-              >
-                <Stack mt="xs" gap="sm">
-                  <Checkbox value="hypothyroidism" label="Hypothyroidism" color="pink" />
-                  <Checkbox value="hyperprolactinemia" label="Hyperprolactinemia" color="pink" />
-                </Stack>
-              </Checkbox.Group>
+                placeholder="Select all that apply"
+                data={diagnosedConditionsOptions}
+                value={formData.diagnosedConditions}
+                onChange={(values) => handleMultiSelectChange('diagnosedConditions', values)}
+                clearable
+              />
+              <MultiSelect
+                label="Has a close female family member been diagnosed with any of the following?"
+                placeholder="Select all that apply"
+                data={familyHistoryOptions}
+                value={formData.familyHistory}
+                onChange={(values) => handleMultiSelectChange('familyHistory', values)}
+                clearable
+              />
           </Stack>
         </Stepper.Step>
         
         <Stepper.Step label="Lifestyle" description="Stress & Medications">
            <Stack p="md" gap="lg">
              <Title order={4}>Your Lifestyle</Title>
+              <MultiSelect
+                label="Are you taking any medications that could affect your menstrual cycle?"
+                placeholder="Select all that apply"
+                data={medicationOptions}
+                value={formData.medications}
+                onChange={(values) => handleMultiSelectChange('medications', values)}
+                clearable
+              />
              <Radio.Group
                   name="stressLevel"
                   label="How would you rate your typical stress level?"
-                  // value={formData.stressLevel || ''}
-                  // onChange={(value) => handleValueChange('stressLevel', value)}
+                  value={formData.stressLevel}
+                  onChange={(value) => handleValueChange('stressLevel', value)}
                 >
                   <Group mt="xs">
                     <Radio value="low" label="Low" color="pink" />
                     <Radio value="moderate" label="Moderate" color="pink" />
                     <Radio value="high" label="High" color="pink" />
+                  </Group>
+                </Radio.Group>
+          </Stack>
+        </Stepper.Step>
+        
+        <Stepper.Step label="Goals" description="Conception">
+           <Stack p="md" gap="lg">
+             <Title order={4}>Family Goals</Title>
+              <Radio.Group
+                  name="isTryingToConceive"
+                  label="Are you currently trying to conceive?"
+                  value={formData.isTryingToConceive}
+                  onChange={(value) => handleValueChange('isTryingToConceive', value)}
+                >
+                  <Group mt="xs">
+                    <Radio value="yes" label="Yes" color="pink" />
+                    <Radio value="no" label="No" color="pink" />
+                    <Radio value="not_sure" label="Not sure / Thinking about it" color="pink" />
                   </Group>
                 </Radio.Group>
           </Stack>
@@ -90,20 +147,14 @@ const ExtendedPCOSQuiz: React.FC<ExtendedPCOSQuizProps> = ({ onComplete }) => {
       </Stepper>
 
        <Group justify="flex-end" mt="xl">
-        {active > 0 && active < 4 && (
-          <Button variant="default" onClick={prevStep}>
-            Back
-          </Button>
+        {active > 0 && active < 3 && (
+          <Button variant="default" onClick={prevStep}>Back</Button>
         )}
-        {active < 3 ? (
-          <Button onClick={nextStep} color="pink">
-            Next
-          </Button>
+        {active < 2 ? (
+          <Button onClick={nextStep} color="pink">Next</Button>
         ) : (
-           active === 3 && (
-            <Button onClick={handleComplete} color="pink">
-              Save & Analyze
-            </Button>
+           active === 2 && (
+            <Button onClick={handleComplete} color="pink">Save & Get Insights</Button>
            )
         )}
       </Group>

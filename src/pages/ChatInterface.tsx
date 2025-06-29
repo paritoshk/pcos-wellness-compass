@@ -1,19 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, TextInput, Stack, Group, Box, Text, ScrollArea, Avatar, Paper, Modal, Container, Center } from "@mantine/core";
-import { IconSend, IconCamera } from "@tabler/icons-react";
-import { useUser, PCOSProfile, FoodAnalysisItem } from '@/contexts/UserContext';
+import { Button, TextInput, Stack, Group, Box, Text, ScrollArea, Avatar, Paper, Modal, Container, Center, Loader, ActionIcon } from "@mantine/core";
+import { IconSend, IconCamera, IconPlus } from "@tabler/icons-react";
+import { useUser, PCOSProfile, FoodAnalysisItem, Message } from '@/contexts/UserContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
 import { FireworksAIService } from '@/services/fireworksAI';
 import ExtendedPCOSQuiz from '@/pages/ExtendedPCOSQuiz';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  foodAnalysis?: FoodAnalysisItem;
-}
 
 const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
   if (!foodAnalysis || !foodAnalysis.foodName) {
@@ -122,39 +114,95 @@ const ChatInterface: React.FC = () => {
             <Text component="h1" size="xl" fw={700}>Chat with Nari</Text>
             <Text c="dimmed">Your personal PCOS wellness assistant</Text>
         </Box>
-        <ScrollArea viewportRef={viewport} style={{ flex: 1 }}>
-            <Stack gap="lg" p="sm">
-                {messages.map((message) => (
-                  <Group key={message.id} wrap="nowrap" gap="sm" style={{ alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                      {message.role === 'assistant' && <Avatar color="pink" radius="xl">N</Avatar>}
-                      <Paper 
-                        shadow="sm" p="md" radius="lg" withBorder={message.role === 'assistant'}
-                        style={{ maxWidth: '90%', backgroundColor: message.role === 'user' ? 'var(--mantine-color-pink-6)' : 'white', color: message.role === 'user' ? 'white' : 'black' }}>
-                          {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
-                          <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
-                          {message.id === messages.find(m => m.role === 'assistant')?.id && !profile.completedExtendedQuiz && (
-                            <Button mt="md" variant="light" color="pink" onClick={() => setExtendedQuizOpened(true) }>
-                              Take Detailed Wellness Quiz
-                            </Button>
-                          )}
-                          <Text size="xs" mt={4} style={{ opacity: 0.7, textAlign: 'right' }}>{message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
-                      </Paper>
-                  </Group>
-                ))}
-                {isTyping && <Group><Avatar color="pink" radius="xl">N</Avatar><Text c="dimmed">Nari is typing...</Text></Group>}
-            </Stack>
-        </ScrollArea>
-        <Group gap="sm" wrap="nowrap">
-            <Button variant="default" size="lg" onClick={() => setAnalyzerOpened(true)} aria-label="Analyze food"><IconCamera size={20} /></Button>
-            <TextInput
-              placeholder="Type your message..." value={currentMessage} onChange={(e) => setCurrentMessage(e.target.value)}
-              onKeyDown={handleKeyPress} radius="xl" size="lg" style={{ flex: 1 }}
+        <ScrollArea.Autosize mah="calc(100vh - 220px)" viewportRef={viewport} p="md">
+          <Stack gap="lg">
+            {messages.map((message) => {
+              const isUser = message.role === 'user';
+              return (
+                 <Group key={message.id} gap="sm" wrap="nowrap" justify={isUser ? "flex-end" : "flex-start"}>
+                    {!isUser && (
+                        <Avatar color="pink" radius="xl">
+                            N
+                        </Avatar>
+                    )}
+                    <Paper
+                        shadow="sm"
+                        p="md"
+                        radius="lg"
+                        withBorder={!isUser}
+                        style={{
+                            maxWidth: '85%',
+                            backgroundColor: isUser ? 'var(--mantine-color-pink-6)' : 'white',
+                            color: isUser ? 'white' : 'black',
+                        }}
+                    >
+                        {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
+                        <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                        {message.id === messages.find(m => m.role === 'assistant')?.id && !profile.completedExtendedQuiz && (
+                          <Button mt="md" variant="light" color="pink" onClick={() => setExtendedQuizOpened(true) }>
+                            Take Detailed Wellness Quiz
+                          </Button>
+                        )}
+                        <Text size="xs" ta="right" c={isUser ? 'gray.4' : 'gray.6'} mt={4}>
+                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </Paper>
+                     {isUser && (
+                        <Avatar color="pink" radius="xl">
+                            {profile.name?.[0]?.toUpperCase() || 'U'}
+                        </Avatar>
+                    )}
+                </Group>
+              );
+            })}
+            {isTyping && (
+              <Group gap="sm" wrap="nowrap" justify="flex-start">
+                 <Avatar color="pink" radius="xl">N</Avatar>
+                 <Paper shadow="sm" p="md" radius="lg" withBorder>
+                    <Loader type="dots" color="pink" />
+                 </Paper>
+              </Group>
+            )}
+          </Stack>
+        </ScrollArea.Autosize>
+      </Stack>
+
+      <Paper withBorder p="sm" radius="md" shadow="xs" style={{ position: 'sticky', bottom: 0 }}>
+        <Group>
+           <ActionIcon variant="light" color="pink" size="xl" radius="md" onClick={() => setAnalyzerOpened(true)}>
+             <IconPlus size="1.2rem" />
+           </ActionIcon>
+           <TextInput
+              variant="filled"
+              radius="md"
+              size="md"
+              style={{ flex: 1 }}
+              placeholder="Ask Nari anything..."
+              value={currentMessage}
+              onChange={(e) => setCurrentMessage(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              rightSectionWidth={42}
               rightSection={
-                <Button onClick={handleSendMessage} disabled={!currentMessage.trim() || isTyping} variant="filled" color="pink" is-icon radius="xl" aria-label="Send message"><IconSend size={20} /></Button>
+                <ActionIcon 
+                  size={32} 
+                  radius="xl" 
+                  color="pink" 
+                  variant="filled" 
+                  onClick={handleSendMessage} 
+                  disabled={!currentMessage.trim() || isTyping}
+                  aria-label="Send message"
+                >
+                  <IconSend style={{ width: '1rem', height: '1rem' }} />
+                </ActionIcon>
               }
             />
         </Group>
-      </Stack>
+      </Paper>
     </Container>
   );
 };
