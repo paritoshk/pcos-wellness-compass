@@ -49,7 +49,7 @@ const PCOSQuiz: React.FC = () => {
     if (profile.completedQuiz) {
       navigate('/chat', { replace: true });
     }
-  }, []); // Run only once on mount
+  }, [profile.completedQuiz, navigate]);
 
   const [active, setActive] = useState(0);
   const [formData, setFormData] = useState<Partial<PCOSProfile>>({

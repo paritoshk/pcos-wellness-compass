@@ -28,13 +28,6 @@ interface StoredMessage extends Omit<Message, 'timestamp'> { timestamp: string; 
 const ChatInterface: React.FC = () => {
   const { profile, updateProfile, isProfileComplete } = useUser();
   const navigate = useNavigate();
-
-  // Don't render anything until the initial profile setup is complete.
-  // The PcosQuiz component handles the redirection logic.
-  if (!isProfileComplete) {
-    return null;
-  }
-
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
     return saved ? JSON.parse(saved).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)})) : [];
@@ -99,6 +92,11 @@ const ChatInterface: React.FC = () => {
       handleSendMessage();
     }
   };
+
+  // Don't render anything until the initial profile setup is complete.
+  if (!isProfileComplete) {
+    return null;
+  }
   
   return (
     <Container size="md" h="calc(100vh - 6rem - 2 * var(--mantine-spacing-md))">
