@@ -55,10 +55,6 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				'nari-primary': '#4A9D9C',
-				'nari-accent': '#FF7062',
-				'nari-secondary': '#F7F9FA',
-				'nari-text': '#333D47',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -69,14 +65,6 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				pcos: {
-					DEFAULT: '#8A4FFF', // Primary purple
-					light: '#B28DFF',
-					dark: '#6A3CBF',
-					teal: '#45CABC',
-					peach: '#FFA69E',
-					neutral: '#F8F7FF',
-				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

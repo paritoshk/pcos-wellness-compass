@@ -3,32 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Camera, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
-import { useUser, FoodAnalysisItem } from '@/contexts/UserContext';
+import { useUser, FoodAnalysisItem, Message } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
-// Mock data for demonstration
-const mockChatHistory = [
-  {
-    id: '1',
-    date: '2025-04-07T14:30:00',
-    topic: 'Diet Recommendations',
-    preview: 'What foods should I avoid with PCOS?',
-    messages: [
-      { role: 'user', content: 'What foods should I avoid with PCOS?' },
-      { role: 'assistant', content: 'With PCOS, it\'s generally recommended to limit foods that can spike insulin levels or promote inflammation. This includes refined carbohydrates, sugary foods and beverages, processed foods high in trans fats, and for some people, dairy products. Everyone\'s body responds differently though, so it\'s important to pay attention to how different foods affect your symptoms.' }
-    ]
-  },
-  {
-    id: '2',
-    date: '2025-04-05T11:15:00',
-    topic: 'Exercise Advice',
-    preview: 'What type of exercise is best for PCOS?',
-    messages: [
-      { role: 'user', content: 'What type of exercise is best for PCOS?' },
-      { role: 'assistant', content: 'For PCOS, a combination of both cardio and strength training is generally most effective. Strength training helps build muscle, which improves insulin sensitivity, while moderate cardio helps with weight management and stress reduction. Activities like HIIT (High-Intensity Interval Training) can be particularly beneficial as they improve insulin sensitivity. Aim for about 150 minutes of moderate exercise each week, spread across several days.' }
-    ]
+// Get real chat history from localStorage
+const getChatHistory = (): Message[] => {
+  try {
+    const stored = localStorage.getItem('nari-chat-messages');
+    if (!stored) return [];
+    // The chat messages are stored with string timestamps, so we need to convert them back to Date objects
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.map(msg => ({...msg, timestamp: new Date(msg.timestamp)})) : [];
+  } catch {
+    return [];
   }
-];
+};
 
 interface HistoryItemProps {
   date: string;
@@ -79,6 +68,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ date, children }) => {
 const HistoryLog: React.FC = () => {
   const { foodAnalysisHistory } = useUser();
   const navigate = useNavigate();
+  const chatHistory = getChatHistory();
 
   const handleShareInChat = (analysis: FoodAnalysisItem) => {
     navigate('/chat', { 
@@ -108,36 +98,18 @@ const HistoryLog: React.FC = () => {
         </TabsList>
         
         <TabsContent value="chats">
-          {mockChatHistory.length > 0 ? (
+          {chatHistory.length > 0 ? (
             <div className="space-y-4">
-              {mockChatHistory.map(chat => (
-                <HistoryItem key={chat.id} date={chat.date}>
+              {chatHistory.map((message, index: number) => (
+                <HistoryItem key={index} date={message.timestamp.toISOString()}>
                   <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium">{chat.topic}</h3>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {chat.messages.map((message, index) => (
-                        <div key={index} className="text-sm">
-                          <div className="font-medium">
-                            {message.role === 'user' ? 'You' : 'Assistant'}:
-                          </div>
-                          <div className="text-muted-foreground">
-                            {message.content}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="border-pcos text-pcos hover:bg-pcos/10"
-                      >
-                        Continue Chat
-                      </Button>
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        {message.role === 'user' ? 'You' : 'Nari'}:
+                      </div>
+                      <div className="text-muted-foreground mt-1">
+                        {message.content}
+                      </div>
                     </div>
                   </div>
                 </HistoryItem>

@@ -61,9 +61,10 @@ export class FireworksAIService {
         },
         body: JSON.stringify({
           model: this.model,
-          max_tokens: 1024,
-          temperature: 0.4,
-          top_p: 0.95,
+          max_tokens: 4096,
+          temperature: 0.6,
+          top_p: 1,
+          top_k: 40,
           messages: [
             {
               role: "user",
@@ -114,38 +115,31 @@ export class FireworksAIService {
     const age = userProfile.age || 'Unknown';
     const symptoms = userProfile.symptoms?.join(', ') || 'General PCOS symptoms';
     const insulinStatus = userProfile.insulinResistant === null ? 'Unknown' : userProfile.insulinResistant ? 'Yes' : 'No';
-    const weightGoals = userProfile.weightGoals || 'Management';
+    const weightGoals = userProfile.weightManagementGoal || 'Management';
     const dietaryPreferences = userProfile.dietaryPreferences?.join(', ') || 'None specified';
     
-    return `You are a specialized nutritionist and expert in PCOS (Polycystic Ovary Syndrome) dietary management. Your task is to analyze food images to provide personalized dietary guidance for PCOS patients.
+    return `First, identify the primary food in the image. Then, acting as a PCOS nutrition expert, analyze it based on the user's profile.
 
-Your understanding of PCOS dietary management includes:
-1. Insulin resistance is present in 70-80% of PCOS patients, requiring low glycemic index foods
-2. Anti-inflammatory diet components help reduce PCOS symptoms
-3. Hormone-balancing foods can help regulate menstrual irregularities
-4. Weight management is often a key factor in symptom control
-5. Individual responses to foods vary based on specific PCOS phenotype
-
-Please analyze this food image for a PCOS patient with the following profile:
+The user has PCOS. Their profile is:
 - Age: ${age}
-- PCOS symptoms: ${symptoms}
-- Insulin resistance: ${insulinStatus}
-- Current weight goals: ${weightGoals}
-- Dietary preferences: ${dietaryPreferences}
+- Symptoms: ${symptoms}
+- Insulin Resistance: ${insulinStatus}
+- Weight Goal: ${weightGoals}
+- Dietary Preferences: ${dietaryPreferences}
 
-For each food identified, please provide detailed analysis in JSON format with the following structure:
+Provide your response in a valid JSON object using the following structure and nothing else:
 {
-  "foodName": "Name of the food with high confidence",
-  "pcosCompatibility": 0-100 score indicating how compatible this food is for PCOS management,
+  "foodName": "Name of the food identified",
+  "pcosCompatibility": 0-100,
   "nutritionalInfo": {
-    "carbs": estimated carbs in grams,
-    "protein": estimated protein in grams,
-    "fats": estimated fats in grams,
-    "glycemicLoad": "Low", "Medium", or "High",
-    "inflammatoryScore": "Anti-inflammatory", "Neutral", or "Pro-inflammatory"
+    "carbs": 0,
+    "protein": 0,
+    "fats": 0,
+    "glycemicLoad": "Low",
+    "inflammatoryScore": "Neutral"
   },
-  "recommendation": "Detailed explanation on why this food is good or bad for PCOS and specific benefits or concerns for this individual's profile",
-  "alternatives": ["Better alternatives if pcosCompatibility is below 80%"]
+  "recommendation": "Detailed recommendation for this user.",
+  "alternatives": []
 }`;
   }
 
@@ -183,7 +177,24 @@ For each food identified, please provide detailed analysis in JSON format with t
     }
 
     try {
-      const systemMessage = `You are Nari, a friendly and empathetic PCOS Wellness Assistant. Your goal is to provide helpful information, support, and guidance to users managing Polycystic Ovary Syndrome (PCOS). Personalize your responses based on the user's profile where appropriate. User's name: ${userProfile.name || 'there'}. User's reported symptoms: ${userProfile.symptoms?.join(', ') || 'not specified'}.`;
+      const systemMessage = `You are Nari, a friendly, empathetic, and knowledgeable PCOS Wellness Assistant. Your primary role is to provide supportive, insightful, and personalized guidance to the user for managing their Polycystic Ovary Syndrome (PCOS).
+
+**CRITICAL INSTRUCTION: ALWAYS consult the User Profile below to tailor your responses. Refer to the user by their name. Acknowledge their specific goals, symptoms, and preferences when relevant.**
+
+---
+**User Profile**
+- **Name:** ${userProfile.name || 'User'}
+- **Age:** ${userProfile.age || 'Not Provided'}
+- **Primary Goal:** ${userProfile.primaryGoal || 'Not Provided'}
+- **Weight Management Goal:** ${userProfile.weightManagementGoal || 'Not Provided'}
+- **Known Symptoms:** ${userProfile.symptoms?.join(', ') || 'Not Specified'}
+- **Dietary Preferences:** ${userProfile.dietaryPreferences?.join(', ') || 'None'}
+- **Diagnosed with Insulin Resistance:** ${userProfile.insulinResistant === null ? 'Unknown' : userProfile.insulinResistant ? 'Yes' : 'No'}
+- **Previously Diagnosed with PCOS:** ${userProfile.hasBeenDiagnosed || 'Unknown'}
+- **PCOS Probability (Our Assessment):** ${userProfile.pcosProbability || 'Not Assessed'}
+---
+
+Your tone should be encouraging and non-judgmental. Do not provide medical advice, but you can offer information based on well-known PCOS management strategies.`;
 
       const messagesForAPI = [
         { role: 'system', content: systemMessage },

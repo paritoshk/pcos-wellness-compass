@@ -1,180 +1,252 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { Toggle } from '@/components/ui/toggle';
-import { useUser } from '@/contexts/UserContext';
+import { Button, Container, Card, Stack, Text, Title, Box, Group, Checkbox, Radio, NumberInput, Progress } from "@mantine/core";
+import { useUser, PCOSProfile } from '@/contexts/UserContext';
 
-// Define the structure for your quiz questions
-const quizQuestions = [
-  {
-    step: 1,
-    title: 'Your Cycle Story',
-    question: 'How would you describe your periods?',
-    type: 'radio',
-    key: 'periodCycle',
-    options: [
-      'Regular as a clock',
-      'A bit unpredictable',
-      'Totally MIA sometimes',
-      'Heavy and painful',
-    ],
-  },
-  {
-    step: 2,
-    title: 'Physical Clues',
-    question: 'Have you noticed any of these uninvited guests?',
-    type: 'toggle',
-    key: 'physicalSymptoms',
-    options: [
-      'Acne (especially jawline)',
-      'Extra hair growth (face/body)',
-      'Hair thinning (on your head)',
-      'Dark skin patches (neck/underarms)',
-    ],
-  },
-  {
-    step: 3,
-    title: 'Lifestyle & Habits',
-    question: 'How often do you get moving?',
-    type: 'radio',
-    key: 'activityLevel',
-    options: [
-      'Daily sweat session',
-      'A few times a week',
-      'Weekend warrior',
-      'What\'s a workout?',
-    ],
-  },
-  {
-    step: 4,
-    title: 'The Mental Game',
-    question: 'How\'s your mood been lately?',
-    type: 'radio',
-    key: 'mood',
-    options: ['Feeling great! 😊', 'Up and down 🎢', 'A bit blue 😟', 'Stressed out 🤯'],
-  },
+const symptomOptions = [
+  'Acne',
+  'Unwanted hair growth (hirsutism)',
+  'Hair loss (on your head)',
+  'Skin darkening (acanthosis nigricans)',
+  'Weight gain or difficulty losing weight',
 ];
 
-const PcosQuiz: React.FC = () => {
+const dietaryOptions = [
+  "Vegan",
+  "Vegetarian",
+  "Gluten-Free",
+  "Dairy-Free",
+];
+
+const goalOptions = [
+  "Regulate my cycle",
+  "Improve my diet",
+  "Lose weight",
+  "Understand my symptoms",
+];
+
+const calculatePcosProbability = (data: Partial<PCOSProfile>): 'low' | 'medium' | 'high' => {
+  let score = 0;
+  if (data.periodRegularity === 'irregular' || data.periodRegularity === 'absent') {
+    score += 2;
+  }
+  score += data.symptoms?.length || 0;
+  if (data.insulinResistant === true) {
+    score += 1;
+  }
+  
+  if (score >= 4) return 'high';
+  if (score >= 2) return 'medium';
+  return 'low';
+};
+
+const PCOSQuiz: React.FC = () => {
+  const { profile, updateProfile } = useUser();
   const navigate = useNavigate();
-  const { updateProfile } = useUser();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-
-    const handleAnswerChange = (key: string, value: string | string[]) => {
-    setAnswers((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleToggleChange = (key: string, option: string, pressed: boolean) => {
-    const currentAnswers = (answers[key] as string[]) || [];
-    const newAnswers = pressed
-      ? [...currentAnswers, option]
-      : currentAnswers.filter((item: string) => item !== option);
-    handleAnswerChange(key, newAnswers);
-  };
-
-  const validateStep = (): boolean => {
-    const newErrors: {[key: string]: string} = {};
-    const currentQuestion = quizQuestions[currentStep];
-    
-    if (!answers[currentQuestion.key] || 
-        (Array.isArray(answers[currentQuestion.key]) && answers[currentQuestion.key].length === 0)) {
-      newErrors[currentQuestion.key] = 'Please select an option';
+  
+  useEffect(() => {
+    // Redirect if the user has already completed the quiz when they first land on the page.
+    if (profile.completedQuiz) {
+      navigate('/chat', { replace: true });
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [profile.completedQuiz, navigate]);
 
-  const nextStep = () => {
-    if (validateStep() && currentStep < quizQuestions.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
+  const [active, setActive] = useState(0);
+  const [formData, setFormData] = useState<Partial<PCOSProfile>>({
+    name: profile.name || '',
+    age: profile.age || null,
+    periodRegularity: profile.periodRegularity || null,
+    primaryGoal: profile.primaryGoal || null,
+    weightManagementGoal: profile.weightManagementGoal || null,
+    symptoms: profile.symptoms || [],
+    insulinResistant: profile.insulinResistant || null,
+    dietaryPreferences: profile.dietaryPreferences || [],
+    hasBeenDiagnosed: profile.hasBeenDiagnosed || null,
+    height: profile.height || { feet: null, inches: null },
+    weight: profile.weight || null,
+  });
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
-  const handleSubmit = () => {
-    if (validateStep()) {
-      // Save quiz results to user profile
-      updateProfile({
-        quizResults: answers,
-        completedQuiz: true
-      });
-      
-      // Navigate to results or dashboard
-      navigate('/chat');
+  const nextStep = () => setActive((current) => (current < 5 ? current + 1 : current));
+  const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
+  
+  const isStepValid = () => {
+    switch (active) {
+      case 0:
+        return disclaimerAccepted;
+      case 1:
+        return !!formData.periodRegularity;
+      case 2:
+        return formData.age !== null && formData.insulinResistant !== null;
+      case 3:
+        return formData.hasBeenDiagnosed !== null && formData.height?.feet !== null && formData.weight !== null;
+      case 4:
+        return formData.primaryGoal !== null && formData.weightManagementGoal !== null;
+      default:
+        // All other steps or completed state are considered valid
+        return true;
     }
   };
+  
+  const handleValueChange = (field: keyof PCOSProfile, value: unknown) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+  };
+  
+  const handleNumericValueChange = (field: 'age' | 'weight', value: number | string) => {
+    const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    setFormData(current => ({...current, [field]: isNaN(numValue) ? null : numValue}));
+  };
+  
+  const handleHeightChange = (part: 'feet' | 'inches', value: number | string) => {
+    const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    setFormData(current => ({ ...current, height: { ...(current.height || {feet: null, inches: null}), [part]: isNaN(numValue) ? null : numValue } }));
+  };
 
-  const currentQuestion = quizQuestions[currentStep];
-  const progress = ((currentStep + 1) / quizQuestions.length) * 100;
+  const handleComplete = () => {
+    const result = calculatePcosProbability(formData);
+    const finalProfile = { ...formData, pcosProbability: result, completedQuiz: true };
+    updateProfile(finalProfile);
+    setActive(5);
+  };
+
+  // Do not render the quiz if the profile is already complete (avoids flicker before redirect)
+  if (profile.completedQuiz && active !== 5) {
+    return null;
+  }
+
+  // Handle the completion screen separately
+  if (active === 5) {
+    return (
+      <Container 
+        style={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 1))'
+        }} 
+        p="md"
+      >
+        <Card style={{ width: '100%', maxWidth: 700 }} shadow="xl" padding="xl" radius="md">
+          <Stack align="center" p="xl" gap="lg">
+            <Title order={3}>Thank You!</Title>
+            <Text>Your PCOS probability assessment is complete.</Text>
+            <Card withBorder radius="md" p="xl" style={{ textTransform: 'capitalize' }}>
+              <Text size="lg" fw={700} c={profile.pcosProbability === 'high' ? 'red' : profile.pcosProbability === 'medium' ? 'orange' : 'green'}>
+                {profile.pcosProbability} Probability
+              </Text>
+            </Card>
+            <Text size="sm" c="dimmed" ta="center">Remember, this is not a medical diagnosis. <br/> Please consult with a healthcare professional.</Text>
+            <Button color="pink" size="md" onClick={() => navigate('/chat', { replace: true })}>Start Your Journey</Button>
+          </Stack>
+        </Card>
+      </Container>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg my-10">
-      <h2 className="text-2xl font-bold text-gray-700 mb-2">Step {currentQuestion.step}: {currentQuestion.title}</h2>
-      <Progress value={progress} className="mb-6" />
-      
-      <div className="mb-8">
-        <p className="text-lg text-gray-800 mb-4">{currentQuestion.question}</p>
-        {currentQuestion.type === 'number' && (
-          <Input
-            type="number"
-            value={answers[currentQuestion.key] || ''}
-            onChange={(e) => handleAnswerChange(currentQuestion.key, e.target.value)}
-            className="max-w-xs"
-          />
-        )}
-        {currentQuestion.type === 'radio' && (
-          <RadioGroup onValueChange={(value) => handleAnswerChange(currentQuestion.key, value)} value={answers[currentQuestion.key]}>
-            {currentQuestion.options?.map((option) => (
-              <div key={option} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={option} />
-                <Label htmlFor={option}>{option}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        )}
-        {currentQuestion.type === 'toggle' && (
-          <div className="space-y-2">
-            {currentQuestion.options?.map((option) => (
-              <Toggle
-                key={option}
-                pressed={((answers[currentQuestion.key] as string[]) || []).includes(option)}
-                onPressedChange={(pressed) => handleToggleChange(currentQuestion.key, option, pressed)}
-                className="justify-start h-auto p-3 text-left data-[state=on]:bg-blue-500 data-[state=on]:text-white hover:bg-blue-50 w-full"
-              >
-                {option}
-              </Toggle>
-            ))}
-          </div>
-        )}
-      </div>
-      {errors[currentQuestion.key] && (
-        <p className="text-red-500 text-sm mt-2">{errors[currentQuestion.key]}</p>
-      )}
+    <Container 
+      style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 1))'
+      }} 
+      p="md"
+    >
+      <Card 
+        style={{ width: '100%', maxWidth: 700 }} 
+        shadow="xl" 
+        padding="xl" 
+        radius="md"
+      >
+        <Stack mb="xl">
+          <Progress value={((active + 1) / 5) * 100} color="pink" radius="sm" size="lg" striped animated />
+          <Title order={4} ta="center" mt="sm">
+            {active === 0 && "Welcome & Disclaimer"}
+            {active === 1 && "Your Cycle & Symptoms"}
+            {active === 2 && "Your Medical History"}
+            {active === 3 && "Physical Health"}
+            {active === 4 && "Lifestyle & Goals"}
+          </Title>
+        </Stack>
 
-      <div className="flex justify-between">
-        <Button onClick={prevStep} disabled={currentStep === 0} variant="outline">
-          Previous
-        </Button>
-        {currentStep < quizQuestions.length - 1 ? (
-          <Button onClick={nextStep}>Next</Button>
-        ) : (
-          <Button onClick={handleSubmit}>Finish & See Results</Button>
+        {active === 0 && (
+          <Stack p="xl">
+            <Box bg="gray.0" p="md">
+              <Text fw={500} mb="sm">For Informational Purposes Only</Text>
+              <Text size="sm" c="dimmed">This assessment is not a medical diagnosis. Please consult with a healthcare professional for an accurate diagnosis.</Text>
+            </Box>
+            <Checkbox
+              checked={disclaimerAccepted}
+              onChange={(event) => setDisclaimerAccepted(event.currentTarget.checked)}
+              label="I have read and agree to the terms above."
+              mt="xl" color="pink"
+            />
+          </Stack>
         )}
-      </div>
-    </div>
+
+        {active === 1 && (
+          <Stack p="xl" gap="xl">
+            <Title order={4}>Your Cycle & Symptoms</Title>
+            <Radio.Group label="How would you describe your periods?" value={formData.periodRegularity || ''} onChange={(v) => handleValueChange('periodRegularity', v)}>
+              <Group mt="xs"><Radio value="regular" label="Regular" color="pink" /><Radio value="irregular" label="Irregular" color="pink" /><Radio value="absent" label="Absent or Infrequent" color="pink" /></Group>
+            </Radio.Group>
+            <Checkbox.Group label="Do you experience any of the following?" value={formData.symptoms || []} onChange={(v) => handleValueChange('symptoms', v)}>
+              <Stack mt="xs" gap="sm">{symptomOptions.map(s => <Checkbox key={s} value={s} label={s} color="pink" />)}</Stack>
+            </Checkbox.Group>
+          </Stack>
+        )}
+        
+        {active === 2 && (
+           <Stack p="xl" gap="xl">
+            <Title order={4}>Your Medical History</Title>
+            <NumberInput label="What's your age?" placeholder="Your age" value={formData.age || ''} onChange={(v) => handleNumericValueChange('age', v)} min={12} max={99} />
+            <Radio.Group label="Have you been diagnosed with insulin resistance or type 2 diabetes?" value={String(formData.insulinResistant)} onChange={(v) => handleValueChange('insulinResistant', v === 'true')}>
+              <Group mt="xs"><Radio value="true" label="Yes" color="pink" /><Radio value="false" label="No" color="pink" /></Group>
+            </Radio.Group>
+          </Stack>
+        )}
+        
+        {active === 3 && (
+          <Stack p="xl" gap="xl">
+            <Title order={4}>Physical Health</Title>
+            <Radio.Group label="Have you ever been officially diagnosed with PCOS by a doctor?" value={formData.hasBeenDiagnosed || ''} onChange={(v) => handleValueChange('hasBeenDiagnosed', v)}>
+               <Group mt="xs"><Radio value="yes" label="Yes" color="pink" /><Radio value="no" label="No" color="pink" /></Group>
+            </Radio.Group>
+            <Group grow>
+              <NumberInput label="Height (feet)" value={formData.height?.feet || ''} onChange={(v) => handleHeightChange('feet', v)} min={3} max={7} />
+              <NumberInput label="Height (inches)" value={formData.height?.inches || ''} onChange={(v) => handleHeightChange('inches', v)} min={0} max={11} />
+            </Group>
+            <NumberInput label="What is your current weight (in lbs)?" placeholder="Enter your weight" value={formData.weight || ''} onChange={(v) => handleNumericValueChange('weight', v)} min={50} max={700} />
+          </Stack>
+        )}
+
+        {active === 4 && (
+          <Stack p="xl" gap="xl">
+            <Title order={4}>Lifestyle & Goals</Title>
+             <Radio.Group label="Are you currently trying to manage your weight?" value={formData.weightManagementGoal || ''} onChange={(v) => handleValueChange('weightManagementGoal', v)}>
+              <Stack mt="xs"><Radio value="lose" label="Yes, trying to lose weight" color="pink" /><Radio value="gain" label="Yes, trying to gain weight" color="pink" /><Radio value="maintain" label="No, maintaining my current weight" color="pink" /><Radio value="not_focused" label="I'm not focused on weight right now" color="pink" /></Stack>
+            </Radio.Group>
+            <Radio.Group label="What's your primary goal right now?" value={formData.primaryGoal || ''} onChange={(v) => handleValueChange('primaryGoal', v)}>
+              <Stack mt="xs">{goalOptions.map(g => <Radio key={g} value={g} label={g} color="pink" />)}</Stack>
+            </Radio.Group>
+            <Checkbox.Group label="Do you have any dietary preferences?" value={formData.dietaryPreferences || []} onChange={(v) => handleValueChange('dietaryPreferences', v)}>
+              <Group mt="xs">{dietaryOptions.map(o => <Checkbox key={o} value={o} label={o} color="pink" />)}</Group>
+            </Checkbox.Group>
+          </Stack>
+        )}
+
+        <Group justify="flex-end" mt="xl">
+          {active > 0 && active < 5 && <Button variant="default" onClick={prevStep}>Back</Button>}
+          {active < 4 && <Button onClick={nextStep} color="pink" disabled={!isStepValid()}>Next</Button>}
+          {active === 4 && <Button onClick={handleComplete} color="pink" disabled={!isStepValid()}>See My Results</Button>}
+        </Group>
+      </Card>
+    </Container>
   );
 };
 
-export default PcosQuiz;
+export default PCOSQuiz;

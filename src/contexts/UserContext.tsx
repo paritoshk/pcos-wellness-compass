@@ -5,13 +5,33 @@ import { useNavigate } from 'react-router-dom';
 export interface PCOSProfile {
   name: string;
   age: number | null;
+  periodRegularity: 'regular' | 'irregular' | 'absent' | null;
+  primaryGoal: string | null;
+  weightManagementGoal: 'lose' | 'gain' | 'maintain' | 'not_focused' | null;
+  pcosProbability: 'low' | 'medium' | 'high' | null;
   symptoms: string[];
   insulinResistant: boolean | null;
-  weightGoals: 'maintain' | 'lose' | 'gain' | null;
   dietaryPreferences: string[];
-  completedSetup: boolean;
-  quizResults?: Record<string, string | string[]>;
-  completedQuiz?: boolean;
+  completedQuiz: boolean;
+  hasBeenDiagnosed: 'yes' | 'no' | null;
+  height: {
+    feet: number | null;
+    inches: number | null;
+  };
+  weight: number | null;
+  completedExtendedQuiz: boolean;
+  // AI-Engineered Features
+  PCOS_Phenotype?: 'Insulin-Resistant' | 'Inflammatory' | 'Adrenal' | 'Hidden-Cause' | null;
+  MetabolicRiskScore?: number | null; // e.g., 1-10
+  HormonalImbalanceIndicators?: string[];
+  PersonalizedFocusAreas?: string[];
+  // Extended Quiz Data
+  diagnosedConditions?: string[];
+  familyHistory?: string[];
+  medications?: string[];
+  stressLevel?: 'low' | 'moderate' | 'high' | null;
+  isTryingToConceive?: 'yes' | 'no' | 'not_sure' | null;
+  skippedExtendedQuizPrompt?: boolean;
 }
 
 export interface FoodAnalysisItem {
@@ -31,6 +51,14 @@ export interface FoodAnalysisItem {
   alternatives: string[];
 }
 
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  foodAnalysis?: FoodAnalysisItem;
+}
+
 interface UserContextType {
   profile: PCOSProfile;
   updateProfile: (data: Partial<PCOSProfile>) => void;
@@ -45,11 +73,28 @@ interface UserContextType {
 const defaultProfile: PCOSProfile = {
   name: '',
   age: null,
+  periodRegularity: null,
+  primaryGoal: null,
+  weightManagementGoal: null,
+  pcosProbability: null,
   symptoms: [],
   insulinResistant: null,
-  weightGoals: null,
   dietaryPreferences: [],
-  completedSetup: false
+  completedQuiz: false,
+  hasBeenDiagnosed: null,
+  height: { feet: null, inches: null },
+  weight: null,
+  completedExtendedQuiz: false,
+  PCOS_Phenotype: null,
+  MetabolicRiskScore: null,
+  HormonalImbalanceIndicators: [],
+  PersonalizedFocusAreas: [],
+  diagnosedConditions: [],
+  familyHistory: [],
+  medications: [],
+  stressLevel: null,
+  isTryingToConceive: null,
+  skippedExtendedQuizPrompt: false,
 };
 
 const UserContext = createContext<UserContextType>({
@@ -66,12 +111,10 @@ const UserContext = createContext<UserContextType>({
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ALL Hooks must be called at the top level, before any conditional returns.
   const { user, isAuthenticated, isLoading, logout: auth0Logout } = useAuth0();
   const navigate = useNavigate();
   
   const [profile, setProfile] = useState<PCOSProfile>(() => {
-    console.log('UserProvider: Initializing profile from localStorage or default');
     const savedProfile = localStorage.getItem('pcosProfile');
     return savedProfile ? JSON.parse(savedProfile) : { ...defaultProfile };
   });
@@ -81,19 +124,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-    console.log('UserProvider: Auth0 useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user name:', user?.name, 'profile.completedSetup:', profile.completedSetup);
-    if (!isLoading && isAuthenticated && user && !profile.completedSetup && !profile.name) {
-      console.log('UserProvider: Auth0 user identified, profile not complete, setting guest name from Auth0');
-      setProfile(prev => ({
-        ...prev,
-        name: user.name || user.nickname || 'Auth0 User',
-      }));
-    }
-  }, [isLoading, isAuthenticated, user, profile.completedSetup, profile.name]);
-
   const updateProfile = useCallback((data: Partial<PCOSProfile>) => {
-    console.log('UserProvider: updateProfile called with:', data);
     setProfile((prev) => {
       const updatedProfile = { ...prev, ...data };
       localStorage.setItem('pcosProfile', JSON.stringify(updatedProfile));
@@ -110,37 +141,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logoutUser = useCallback(() => {
-    console.log('UserProvider: logoutUser called. Auth0 isAuthenticated:', isAuthenticated);
-    if (isAuthenticated) {
-      console.log('UserProvider: Calling auth0Logout');
-      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-    }
-    setProfile({ ...defaultProfile });
+    // Explicitly clear state and storage on logout
+    setProfile(defaultProfile);
     setFoodAnalysisHistory([]);
     localStorage.removeItem('pcosProfile');
     localStorage.removeItem('foodAnalysisHistory');
-    console.log('UserProvider: Navigating to / after logout');
-    navigate('/');
-  }, [isAuthenticated, auth0Logout, navigate]);
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  }, [auth0Logout]);
 
   useEffect(() => {
-    if(profile.name || profile.completedSetup) { 
-      console.log('UserProvider: Persisting profile to localStorage:', profile);
-      localStorage.setItem('pcosProfile', JSON.stringify(profile));
+    if (isAuthenticated && user && !profile.name) {
+      updateProfile({ name: user.name || user.nickname || 'Wellness Warrior' });
     }
-  }, [profile]);
+  }, [isAuthenticated, user, profile.name, updateProfile]);
 
-  // Now, the conditional return for isLoading is AFTER all hook calls.
-  console.log('UserProvider: Auth0 state before isLoading check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
   if (isLoading) {
-    console.log("UserProvider: Auth0 is loading. Returning null to prevent further rendering until auth is resolved.");
     return null; 
   }
 
-  // This calculation must also be after the isLoading check, or if profile might not be fully initialized.
-  const isProfileComplete = profile.completedSetup;
-  console.log('UserProvider: isProfileComplete calculated as:', isProfileComplete, 'based on profile.completedSetup:', profile.completedSetup);
-  console.log('UserProvider: Rendering context with profile:', profile, 'isProfileComplete:', isProfileComplete);
+  const isProfileComplete = profile.completedQuiz;
 
   return (
     <UserContext.Provider value={{ 
@@ -150,7 +169,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       foodAnalysisHistory, 
       addFoodAnalysis,
       logoutUser,
-      authIsLoading: isLoading, // This will be false here due to the check above
+      authIsLoading: isLoading,
       authIsAuthenticated: isAuthenticated
     }}>
       {children}

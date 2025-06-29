@@ -1,12 +1,59 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 import LoginButton from '@/components/LoginButton';
-import { Utensils, Activity, FileText, HeartHandshake, Shield } from 'lucide-react';
+import { IconToolsKitchen2, IconActivity, IconFileText, IconHeartHandshake, IconShield, IconChartBar, IconDroplet, IconClipboardText, IconSparkles } from '@tabler/icons-react';
+import { Container, Text, Grid, Card, Group, Box, Stack, Title, Modal, List, ThemeIcon } from '@mantine/core';
+
+const features = [
+  {
+    icon: IconToolsKitchen2,
+    title: 'Food Analysis',
+    description: 'Instantly analyze meals for PCOS compatibility by taking a photo. Our AI provides a detailed breakdown of macronutrients, glycemic load, and inflammatory score.',
+    benefits: [
+      'Get immediate feedback on your food choices.',
+      'Understand how different foods impact your body.',
+      'Receive suggestions for healthier alternatives.',
+    ]
+  },
+  {
+    icon: IconActivity,
+    title: 'Personalized Advice',
+    description: 'Receive recommendations tailored to your unique PCOS profile, symptoms, and goals. Nari learns and adapts to your health journey.',
+     benefits: [
+      'Guidance that goes beyond generic advice.',
+      'Focus on areas most important for your well-being.',
+      'Adjust your plan as your symptoms and goals change.',
+    ]
+  },
+    {
+    icon: IconFileText,
+    title: 'Food & Symptom Tracking',
+    description: 'Log your meals, symptoms, and cycle to uncover patterns and track your progress over time. See what works best for you.',
+     benefits: [
+      'Identify triggers and correlations.',
+      'Visualize your progress with clear charts.',
+      'Share a detailed history with your healthcare provider.',
+    ]
+  },
+  {
+    icon: IconHeartHandshake,
+    title: 'Expert Connect',
+    description: 'Connect with certified nutritionists and health coaches specializing in PCOS for one-on-one consultations and support.',
+     benefits: [
+      'Get professional, evidence-based guidance.',
+      'Build a support system you can trust.',
+      'Ask questions and get expert answers.',
+    ]
+  }
+];
+
+type Feature = typeof features[0];
 
 const WelcomePage = () => {
   const navigate = useNavigate();
   const { isProfileComplete } = useUser();
+  const [openedModal, setOpenedModal] = useState<Feature | null>(null);
 
   useEffect(() => {
     // If user has ALREADY completed profile setup (e.g., returning user), redirect to chat
@@ -17,65 +64,119 @@ const WelcomePage = () => {
   }, [isProfileComplete, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-nari-primary/10 via-white to-nari-accent/10">
-      <header className="w-full p-6 flex items-center gap-3">
-        <img src="/logo.png" alt="Nari AI" className="h-10 w-auto object-contain" />
-        <h1 className="text-3xl font-bold gradient-text">Nari AI</h1>
-      </header>
-      
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12">
-        <div className="w-full max-w-4xl text-center space-y-12">
-          <div className="space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-nari-text-main">Your Personal PCOS Health Assistant</h2>
-            <p className="text-xl text-nari-text-main/80 max-w-2xl mx-auto">
+    <Box 
+      style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 1), rgba(219, 39, 119, 0.1))'
+      }}
+    >
+      <Container size="xl" p="xl">
+        <Group mb="xl">
+          <img src="/logo.png" alt="Nari AI" style={{ height: 40, width: 'auto' }} />
+          <Title 
+            order={1} 
+            size="2rem" 
+            fw={700}
+            style={{
+              background: 'linear-gradient(45deg, var(--mantine-color-pink-6), var(--mantine-color-grape-6))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+          >
+            Nari AI
+          </Title>
+        </Group>
+        
+        <Stack align="center" justify="center" style={{ minHeight: '70vh' }} gap="xl">
+          <Box ta="center" maw={1000}>
+            <Title order={2} size="3rem" mb="md" c="dark">
+              Your Personal PCOS Health Assistant
+            </Title>
+            <Text size="xl" c="dimmed" maw={800} mx="auto">
               Get personalized guidance for PCOS-friendly food choices and lifestyle recommendations
-            </p>
-          </div>
+            </Text>
+          </Box>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
-                <Utensils className="h-8 w-8 text-nari-primary" />
-              </div>
-              <h3 className="font-semibold text-xl text-nari-text-main">Food Analysis</h3>
-              <p className="text-sm text-nari-text-muted mt-2">Instantly analyze meals for PCOS compatibility</p>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
-                <Activity className="h-8 w-8 text-nari-primary" />
-              </div>
-              <h3 className="font-semibold text-xl text-nari-text-main">Personalized Advice</h3>
-              <p className="text-sm text-nari-text-muted mt-2">Get recommendations tailored to your PCOS profile</p>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
-                <FileText className="h-8 w-8 text-nari-primary" />
-              </div>
-              <h3 className="font-semibold text-xl text-nari-text-main">Food Tracking</h3>
-              <p className="text-sm text-nari-text-muted mt-2">Log meals and monitor your progress</p>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center group hover:scale-105">
-              <div className="h-16 w-16 bg-nari-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-nari-primary/20">
-                <HeartHandshake className="h-8 w-8 text-nari-primary" />
-              </div>
-              <h3 className="font-semibold text-xl text-nari-text-main">Expert Connect</h3>
-              <p className="text-sm text-nari-text-muted mt-2">Connect with PCOS nutritionists</p>
-            </div>
-          </div>
+          <Grid gutter="xl" justify="center">
+            {features.map((feature) => (
+              <Grid.Col key={feature.title} span={{ base: 12, sm: 6, lg: 3 }}>
+                <Card 
+                  p="xl" 
+                  radius="xl" 
+                  shadow="md"
+                  onClick={() => setOpenedModal(feature)}
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  <Stack align="center" gap="md">
+                    <Box 
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <feature.icon size={32} color="var(--mantine-color-pink-6)" />
+                    </Box>
+                    <Title order={3} size="xl" ta="center">{feature.title}</Title>
+                    <Text size="sm" c="dimmed" ta="center">{feature.description.split('.')[0]}.</Text>
+                  </Stack>
+                </Card>
+              </Grid.Col>
+            ))}
+          </Grid>
           
-          <div className="pt-8 space-y-6 flex flex-col items-center">
+          <Stack align="center" gap="md" pt="xl">
             <LoginButton />
-            <div className="flex items-center justify-center gap-2 text-xs text-nari-text-muted">
-              <Shield className="h-3 w-3" />
-              <p>Your data is secured and private</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            <Group gap="xs">
+              <IconShield size={16} color="var(--mantine-color-dimmed)" />
+              <Text size="xs" c="dimmed">Your data is secured and private</Text>
+            </Group>
+          </Stack>
+        </Stack>
+      </Container>
+      
+      <Modal opened={openedModal !== null} onClose={() => setOpenedModal(null)} title={openedModal?.title} centered size="lg">
+        {openedModal && (
+          <Stack p="md">
+            <Text c="dimmed">{openedModal.description}</Text>
+            <Title order={4} mt="md">Key Benefits</Title>
+            <List
+              spacing="sm"
+              size="sm"
+              center
+              icon={
+                <ThemeIcon color="pink" size={24} radius="xl">
+                  <IconSparkles size={16} />
+                </ThemeIcon>
+              }
+            >
+              {openedModal.benefits.map((benefit, index) => (
+                <List.Item key={index}>{benefit}</List.Item>
+              ))}
+            </List>
+          </Stack>
+        )}
+      </Modal>
+
+    </Box>
   );
 };
 
