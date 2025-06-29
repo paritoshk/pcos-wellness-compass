@@ -1,303 +1,224 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Stepper, Container, Card, Stack, Text, Title, Box, Group, Checkbox, Radio, NumberInput } from "@mantine/core";
-import { useUser, PCOSProfile } from '@/contexts/UserContext';
+import React, { useState, useRef, useEffect } from 'react';
+import { Button, TextInput, Stack, Group, Box, Text, ScrollArea, Avatar, Paper, Modal, Container, Center, Loader, ActionIcon } from "@mantine/core";
+import { IconSend, IconCamera, IconPlus } from "@tabler/icons-react";
+import { useUser, PCOSProfile, FoodAnalysisItem, Message } from '@/contexts/UserContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
+import { FireworksAIService } from '@/services/fireworksAI';
+import ExtendedPCOSQuiz from '@/pages/ExtendedPCOSQuiz';
 
-const symptomOptions = [
-  'Acne',
-  'Unwanted hair growth (hirsutism)',
-  'Hair loss (on your head)',
-  'Skin darkening (acanthosis nigricans)',
-  'Weight gain or difficulty losing weight',
-];
-
-const goalOptions = [
-  "Regulate my cycle",
-  "Improve my diet",
-  "Lose weight",
-  "Understand my symptoms",
-];
-
-const calculatePcosProbability = (data: Partial<PCOSProfile>): 'low' | 'medium' | 'high' => {
-  let score = 0;
-  if (data.periodRegularity === 'irregular' || data.periodRegularity === 'absent') {
-    score += 2;
+const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
+  if (!foodAnalysis || !foodAnalysis.foodName) {
+    return "I'm sorry, I couldn't analyze that food properly. Could you please try again?";
   }
-  score += data.symptoms?.length || 0;
-  if (data.insulinResistant === true) {
-    score += 1;
+  const compatibilityLevel = foodAnalysis.pcosCompatibility > 70 ? "good" : foodAnalysis.pcosCompatibility > 50 ? "moderate" : "poor";
+  const baseResponse = `I've analyzed your ${foodAnalysis.foodName}. It has ${compatibilityLevel} compatibility (${foodAnalysis.pcosCompatibility}%) with your PCOS management plan.\n\n`;
+  const nutritionInfo = `Nutritional breakdown: ${foodAnalysis.nutritionalInfo.carbs}g carbs, ${foodAnalysis.nutritionalInfo.protein}g protein, ${foodAnalysis.nutritionalInfo.fats}g fats. It has a ${foodAnalysis.nutritionalInfo.glycemicLoad.toLowerCase()} glycemic load and is ${foodAnalysis.nutritionalInfo.inflammatoryScore.toLowerCase()} in terms of inflammation.\n\n`;
+  const recommendation = `${foodAnalysis.recommendation}\n\n`;
+  let alternativesText = "";
+  if (foodAnalysis.pcosCompatibility < 80 && foodAnalysis.alternatives && foodAnalysis.alternatives.length > 0) {
+    alternativesText = `Here are some better alternatives you might consider:\n` + foodAnalysis.alternatives.map((alt: string) => `• ${alt}`).join('\n');
   }
-  
-  if (score >= 4) return 'high';
-  if (score >= 2) return 'medium';
-  return 'low';
+  return baseResponse + nutritionInfo + recommendation + alternativesText;
 };
 
-const PCOSQuiz: React.FC = () => {
-  const { profile, updateProfile } = useUser();
+const CHAT_MESSAGES_STORAGE_KEY = 'pcosChatMessages';
+interface StoredMessage extends Omit<Message, 'timestamp'> { timestamp: string; }
+
+const ChatInterface: React.FC = () => {
+  const { profile, updateProfile, isProfileComplete } = useUser();
   const navigate = useNavigate();
-  const [active, setActive] = useState(0);
-  const [formData, setFormData] = useState<Partial<PCOSProfile>>({
-    name: profile.name || '',
-    age: profile.age || null,
-    periodRegularity: profile.periodRegularity || null,
-    primaryGoal: profile.primaryGoal || null,
-    weightManagementGoal: profile.weightManagementGoal || null,
-    pcosProbability: profile.pcosProbability || null,
-    symptoms: profile.symptoms || [],
-    insulinResistant: profile.insulinResistant || null,
-    dietaryPreferences: profile.dietaryPreferences || [],
-    hasBeenDiagnosed: profile.hasBeenDiagnosed || null,
-    height: profile.height || { feet: null, inches: null },
-    weight: profile.weight || null,
+
+  // Don't render anything until the initial profile setup is complete.
+  // The PcosQuiz component handles the redirection logic.
+  if (!isProfileComplete) {
+    return null;
+  }
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
+    return saved ? JSON.parse(saved).map((msg: StoredMessage) => ({...msg, timestamp: new Date(msg.timestamp)})) : [];
   });
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [analyzerOpened, setAnalyzerOpened] = useState(false);
+  const [extendedQuizOpened, setExtendedQuizOpened] = useState(false);
+  const viewport = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const fireworksAIService = useRef(new FireworksAIService()).current;
 
-  const nextStep = () => setActive((current) => (current < 5 ? current + 1 : current));
-  const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
-  
-  const handleValueChange = (field: keyof PCOSProfile, value: string | boolean | string[] |'yes' | 'no') => {
-    setFormData((current) => ({ ...current, [field]: value }));
-  };
-  
-  const handleNumericValueChange = (field: 'age' | 'weight', value: number | string) => {
-    const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-    setFormData((current) => ({...current, [field]: isNaN(numValue) ? null : numValue}));
-  }
-  
-  const handleHeightChange = (part: 'feet' | 'inches', value: number | string) => {
-      const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-      setFormData(current => ({...current, height: {...current.height, [part]: isNaN(numValue) ? null : numValue }}));
-  }
+  const scrollToBottom = () => viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' });
+  useEffect(scrollToBottom, [messages]);
+  useEffect(() => {
+    localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
+  useEffect(() => {
+    if (messages.length === 0 && profile.name) {
+      setMessages([{
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button, or take a more detailed quiz to personalize your experience.`,
+        timestamp: new Date()
+      }]);
+    }
+  }, [profile.name, messages.length]);
 
-  const handleComplete = () => {
-    const result = calculatePcosProbability(formData);
-    const finalProfile = {
-      ...formData,
-      pcosProbability: result,
-      completedQuiz: true
-    };
-    updateProfile(finalProfile);
-    setActive(5); // Move to completed step
-  };
+  useEffect(() => {
+    const foodAnalysis = location.state?.foodAnalysis as FoodAnalysisItem | undefined;
+    if (foodAnalysis) {
+      navigate(location.pathname, { replace: true, state: {} });
+      const userFoodMessage: Message = { id: crypto.randomUUID(), role: 'user', content: `I've analyzed my ${foodAnalysis.foodName}. Can you give me feedback?`, timestamp: new Date(), foodAnalysis };
+      const assistantFoodMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: getFoodAnalysisResponse(foodAnalysis), timestamp: new Date() };
+      setMessages(prev => [...prev, userFoodMessage, assistantFoodMessage]);
+    }
+  }, [location.state, navigate, location.pathname]);
 
-  const renderStepContent = () => {
-    switch (active) {
-      case 0: // Welcome
-        return (
-          <Stack>
-            <Title order={3} mb="md">PCOS Probability Assessment</Title>
-            <Box bg="gray.0" p="md" radius="sm">
-              <Text fw={500} mb="sm">For Informational Purposes Only</Text>
-              <Text size="sm" c="dimmed">This assessment is not a medical diagnosis. The results are based on common PCOS symptoms and risk factors and are intended for educational purposes. Please consult with a qualified healthcare professional for an accurate diagnosis and personalized medical advice.</Text>
-            </Box>
-            <Checkbox
-              checked={disclaimerAccepted}
-              onChange={(event) => setDisclaimerAccepted(event.currentTarget.checked)}
-              label="I have read and agree to the terms above."
-              mt="xl"
-              color="pink"
-            />
-          </Stack>
-        );
-      case 1: // Symptoms
-        return (
-          <Stack gap="xl" p="md">
-            <Title order={4}>Your Cycle & Symptoms</Title>
-            <Radio.Group
-              name="periodRegularity"
-              label="How would you describe your periods?"
-              value={formData.periodRegularity || ''}
-              onChange={(value) => handleValueChange('periodRegularity', value as 'regular' | 'irregular' | 'absent')}
-            >
-              <Group mt="xs">
-                <Radio value="regular" label="Regular" color="pink" />
-                <Radio value="irregular" label="Irregular" color="pink" />
-                <Radio value="absent" label="Absent or Infrequent" color="pink" />
-              </Group>
-            </Radio.Group>
-            <Checkbox.Group
-              label="Do you experience any of the following?"
-              value={formData.symptoms || []}
-              onChange={(values) => handleValueChange('symptoms', values)}
-            >
-              <Stack mt="xs" gap="sm">
-                {symptomOptions.map((symptom) => (
-                  <Checkbox key={symptom} value={symptom} label={symptom} color="pink" />
-                ))}
-              </Stack>
-            </Checkbox.Group>
-          </Stack>
-        );
-      case 2: // Medical History
-        return (
-          <Stack gap="xl" p="md">
-            <Title order={4}>Your Medical History</Title>
-            <NumberInput
-              label="What's your age?"
-              placeholder="Your age"
-              value={formData.age || ''}
-              onChange={(value) => handleNumericValueChange('age', value)}
-              min={12} max={99}
-            />
-            <Radio.Group
-              name="insulinResistant"
-              label="Have you been diagnosed with insulin resistance or type 2 diabetes?"
-              value={formData.insulinResistant === null ? '' : String(formData.insulinResistant)}
-              onChange={(value) => handleValueChange('insulinResistant', value === 'true')}
-            >
-              <Group mt="xs">
-                <Radio value="true" label="Yes" color="pink" />
-                <Radio value="false" label="No" color="pink" />
-              </Group>
-            </Radio.Group>
-          </Stack>
-        );
-      case 3: // Physical Health
-        return (
-          <Stack gap="xl" p="md">
-            <Title order={4}>Physical Health</Title>
-            <Radio.Group
-              name="hasBeenDiagnosed"
-              label="Have you ever been officially diagnosed with PCOS by a doctor?"
-              value={formData.hasBeenDiagnosed || ''}
-              onChange={(value) => handleValueChange('hasBeenDiagnosed', value as 'yes' | 'no')}
-            >
-              <Group mt="xs">
-                <Radio value="yes" label="Yes" color="pink" />
-                <Radio value="no" label="No" color="pink" />
-              </Group>
-            </Radio.Group>
-            <Group grow>
-              <NumberInput
-                label="Height (feet)"
-                value={formData.height?.feet || ''}
-                onChange={(value) => handleHeightChange('feet', value)}
-                min={3} max={7}
-              />
-              <NumberInput
-                label="Height (inches)"
-                value={formData.height?.inches || ''}
-                onChange={(value) => handleHeightChange('inches', value)}
-                min={0} max={11}
-              />
-            </Group>
-            <NumberInput
-              label="What is your current weight (in lbs)?"
-              placeholder="Enter your weight"
-              value={formData.weight || ''}
-              onChange={(value) => handleNumericValueChange('weight', value)}
-              min={50} max={700}
-            />
-          </Stack>
-        );
-      case 4: // Lifestyle & Goals
-        return (
-          <Stack gap="xl" p="md">
-            <Title order={4}>Lifestyle & Goals</Title>
-            <Radio.Group
-              name="weightManagementGoal"
-              label="Are you currently trying to manage your weight?"
-              value={formData.weightManagementGoal || ''}
-              onChange={(value) => handleValueChange('weightManagementGoal', value as 'lose' | 'gain' | 'maintain' | 'not_focused')}
-            >
-              <Stack mt="xs">
-                <Radio value="lose" label="Yes, trying to lose weight" color="pink" />
-                <Radio value="gain" label="Yes, trying to gain weight" color="pink" />
-                <Radio value="maintain" label="No, maintaining my current weight" color="pink" />
-                <Radio value="not_focused" label="I'm not focused on weight right now" color="pink" />
-              </Stack>
-            </Radio.Group>
-            <Radio.Group 
-              name="primaryGoal" 
-              label="What's your primary goal right now?" 
-              value={formData.primaryGoal || ''} 
-              onChange={(value) => handleValueChange('primaryGoal', value as string)}
-            >
-              <Stack mt="xs">
-                {goalOptions.map(g => <Radio key={g} value={g} label={g} color="pink" />)}
-              </Stack>
-            </Radio.Group>
-          </Stack>
-        );
-      default:
-        return null;
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim()) return;
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: currentMessage, timestamp: new Date() };
+    const newMessagesState = [...messages, userMessage];
+    setMessages(newMessagesState);
+    setCurrentMessage('');
+    setIsTyping(true);
+
+    const conversationHistory = newMessagesState.map(msg => ({ role: msg.role, content: msg.content }));
+    try {
+      const aiResponseContent = await fireworksAIService.getChatResponse(conversationHistory, profile as PCOSProfile);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: aiResponseContent || "I'm having a little trouble thinking. Please try again.", timestamp: new Date() }]);
+    } catch (error) {
+       console.error("Error fetching AI response:", error);
+       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: "Sorry, I encountered an error and couldn't process your message.", timestamp: new Date() }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
   return (
-    <Container 
-      style={{ 
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(255, 255, 255, 1))'
-      }} 
-      p="md"
-    >
-      <Card 
-        style={{ width: '100%', maxWidth: 600 }} 
-        shadow="xl" padding="xl" radius="md"
-      >
-        <Stack gap="xl">
-          <Stepper active={active} onStepClick={setActive} color="pink" styles={{
-            stepBody: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
-            step: { flexDirection: 'column' }
-          }}>
-            <Stepper.Step label="Welcome" description="Disclaimer" />
-            <Stepper.Step label="Symptoms" description="Your experiences" />
-            <Stepper.Step label="Medical History" description="Related conditions" />
-            <Stepper.Step label="Physical Health" description="Measurements" />
-            <Stepper.Step label="Lifestyle" description="Diet & Goals" />
-            <Stepper.Completed>
-              <Stack align="center" p="md" gap="lg">
-                <Title order={3}>Thank You!</Title>
-                <Text>Your PCOS probability assessment is complete.</Text>
-                <Card withBorder radius="md" p="xl" style={{ textTransform: 'capitalize' }}>
-                  <Text size="lg" fw={700} c={
-                    formData.pcosProbability === 'high' ? 'red' :
-                    formData.pcosProbability === 'medium' ? 'orange' : 'green'
-                  }>
-                    {formData.pcosProbability} Probability
-                  </Text>
-                </Card>
-                <Text size="sm" c="dimmed" ta="center">
-                  Remember, this is not a medical diagnosis. <br/> Please consult with a healthcare professional.
-                </Text>
-                <Button color="pink" size="md" onClick={() => navigate('/chat')}>
-                  Start Your Journey
-                </Button>
-              </Stack>
-            </Stepper.Completed>
-          </Stepper>
+    <Container size="md" h="calc(100vh - 6rem - 2 * var(--mantine-spacing-md))">
+      <Modal opened={analyzerOpened} onClose={() => setAnalyzerOpened(false)} title="Analyze Food" centered>
+        <ChatFoodAnalyzer onAnalysisComplete={(analysis) => {
+          setAnalyzerOpened(false);
+          const userFoodMessage: Message = { id: crypto.randomUUID(), role: 'user', content: `I've analyzed my ${analysis.foodName}. Can you give me feedback?`, timestamp: new Date(), foodAnalysis: analysis };
+          const assistantFoodMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: getFoodAnalysisResponse(analysis), timestamp: new Date() };
+          setMessages(prev => [...prev, userFoodMessage, assistantFoodMessage]);
+        }} />
+      </Modal>
 
-          {active < 5 && (
-            <>
-              <Box mt="xl">
-                {renderStepContent()}
-              </Box>
+      {/* Placeholder for the new Extended Quiz Modal */}
+      <Modal opened={extendedQuizOpened} onClose={() => setExtendedQuizOpened(false)} title="Detailed Wellness Quiz" size="xl" centered>
+        <ExtendedPCOSQuiz onComplete={() => setExtendedQuizOpened(false)} />
+      </Modal>
 
-              <Group justify="flex-end" mt="xl">
-                {active > 0 && (
-                  <Button variant="default" onClick={prevStep}>
-                    Back
-                  </Button>
-                )}
-                {active < 4 && (
-                  <Button onClick={nextStep} color="pink" disabled={active === 0 && !disclaimerAccepted}>
-                    Next
-                  </Button>
-                )}
-                {active === 4 && (
-                  <Button onClick={handleComplete} color="pink">
-                    See My Results
-                  </Button>
-                )}
+      <Stack h="100%" gap="md">
+        <Box>
+            <Text component="h1" size="xl" fw={700}>Chat with Nari</Text>
+            <Text c="dimmed">Your personal PCOS wellness assistant</Text>
+        </Box>
+        <ScrollArea.Autosize mah="calc(100vh - 220px)" viewportRef={viewport} p="md">
+          <Stack gap="lg">
+            {messages.map((message) => {
+              const isUser = message.role === 'user';
+              return (
+                 <Group key={message.id} gap="sm" wrap="nowrap" justify={isUser ? "flex-end" : "flex-start"}>
+                    {!isUser && (
+                        <Avatar color="pink" radius="xl">
+                            N
+                        </Avatar>
+                    )}
+                    <Paper
+                        shadow="sm"
+                        p="md"
+                        radius="lg"
+                        withBorder={!isUser}
+                        style={{
+                            maxWidth: '85%',
+                            backgroundColor: isUser ? 'var(--mantine-color-pink-6)' : 'white',
+                            color: isUser ? 'white' : 'black',
+                        }}
+                    >
+                        {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
+                        <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                        
+                        {message.id === messages[0].id && !profile.completedExtendedQuiz && !profile.skippedExtendedQuizPrompt && (
+                          <Group mt="md">
+                            <Button variant="light" color="pink" onClick={() => setExtendedQuizOpened(true) }>
+                              Take Detailed Wellness Quiz
+                            </Button>
+                             <Button variant="subtle" color="gray" size="compact-md" onClick={() => updateProfile({ skippedExtendedQuizPrompt: true })}>
+                              Skip for now
+                            </Button>
+                          </Group>
+                        )}
+
+                        <Text size="xs" ta="right" c={isUser ? 'gray.4' : 'gray.6'} mt={4}>
+                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </Paper>
+                     {isUser && (
+                        <Avatar color="pink" radius="xl">
+                            {profile.name?.[0]?.toUpperCase() || 'U'}
+                        </Avatar>
+                    )}
+                </Group>
+              );
+            })}
+            {isTyping && (
+              <Group gap="sm" wrap="nowrap" justify="flex-start">
+                 <Avatar color="pink" radius="xl">N</Avatar>
+                 <Paper shadow="sm" p="md" radius="lg" withBorder>
+                    <Loader type="dots" color="pink" />
+                 </Paper>
               </Group>
-            </>
-          )}
-        </Stack>
-      </Card>
+            )}
+          </Stack>
+        </ScrollArea.Autosize>
+      </Stack>
+
+      <Paper withBorder p="sm" radius="md" shadow="xs" style={{ position: 'sticky', bottom: 0 }}>
+        <Group>
+           <ActionIcon variant="light" color="pink" size="xl" radius="md" onClick={() => setAnalyzerOpened(true)}>
+             <IconPlus size="1.2rem" />
+           </ActionIcon>
+           <TextInput
+              variant="filled"
+              radius="md"
+              size="md"
+              style={{ flex: 1 }}
+              placeholder="Ask Nari anything..."
+              value={currentMessage}
+              onChange={(e) => setCurrentMessage(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              rightSectionWidth={42}
+              rightSection={
+                <ActionIcon 
+                  size={32} 
+                  radius="xl" 
+                  color="pink" 
+                  variant="filled" 
+                  onClick={handleSendMessage} 
+                  disabled={!currentMessage.trim() || isTyping}
+                  aria-label="Send message"
+                >
+                  <IconSend style={{ width: '1rem', height: '1rem' }} />
+                </ActionIcon>
+              }
+            />
+        </Group>
+      </Paper>
     </Container>
   );
 };
 
-export default PCOSQuiz;
+export default ChatInterface;

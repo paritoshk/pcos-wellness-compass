@@ -9,8 +9,11 @@ interface AuthGuardProps {
 }
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isProfileComplete } = useUser(); // We now know this means completedQuiz
-  const { isAuthenticated, isLoading } = useAuth0();
+  const { isProfileComplete, authIsLoading: isUserContextLoading } = useUser();
+  const { isAuthenticated, isLoading: isAuth0Loading } = useAuth0();
+
+  // Combine loading states from Auth0 and our UserContext
+  const isLoading = isAuth0Loading || isUserContextLoading;
 
   if (isLoading) {
     return (

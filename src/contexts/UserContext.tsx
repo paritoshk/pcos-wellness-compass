@@ -141,6 +141,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logoutUser = useCallback(() => {
+    // Explicitly clear state and storage on logout
+    setProfile(defaultProfile);
+    setFoodAnalysisHistory([]);
+    localStorage.removeItem('pcosProfile');
+    localStorage.removeItem('foodAnalysisHistory');
     auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   }, [auth0Logout]);
 
@@ -149,15 +154,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProfile({ name: user.name || user.nickname || 'Wellness Warrior' });
     }
   }, [isAuthenticated, user, profile.name, updateProfile]);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setProfile(defaultProfile);
-      setFoodAnalysisHistory([]);
-      localStorage.removeItem('pcosProfile');
-      localStorage.removeItem('foodAnalysisHistory');
-    }
-  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return null; 
