@@ -13,6 +13,12 @@ export interface PCOSProfile {
   insulinResistant: boolean | null;
   dietaryPreferences: string[];
   completedQuiz: boolean;
+  hasBeenDiagnosed: 'yes' | 'no' | null;
+  height: {
+    feet: number | null;
+    inches: number | null;
+  };
+  weight: number | null;
 }
 
 export interface FoodAnalysisItem {
@@ -53,7 +59,10 @@ const defaultProfile: PCOSProfile = {
   symptoms: [],
   insulinResistant: null,
   dietaryPreferences: [],
-  completedQuiz: false
+  completedQuiz: false,
+  hasBeenDiagnosed: null,
+  height: { feet: null, inches: null },
+  weight: null
 };
 
 const UserContext = createContext<UserContextType>({
@@ -96,6 +105,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isLoading, isAuthenticated, user, profile.completedQuiz, profile.name]);
 
+  useEffect(() => {
+    // This effect reliably clears local data when the user is no longer authenticated.
+    if (!isLoading && !isAuthenticated) {
+      console.log("UserProvider: Auth state is not authenticated. Clearing profile and history.");
+      setProfile(defaultProfile);
+      setFoodAnalysisHistory([]);
+      localStorage.removeItem('pcosProfile');
+      localStorage.removeItem('foodAnalysisHistory');
+    }
+  }, [isAuthenticated, isLoading]);
+
   const updateProfile = useCallback((data: Partial<PCOSProfile>) => {
     console.log('UserProvider: updateProfile called with:', data);
     setProfile((prev) => {
@@ -114,25 +134,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logoutUser = useCallback(() => {
-    console.log('UserProvider: logoutUser called. Auth0 isAuthenticated:', isAuthenticated);
-    if (isAuthenticated) {
-      console.log('UserProvider: Calling auth0Logout');
-      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-    }
-    setProfile({ ...defaultProfile });
-    setFoodAnalysisHistory([]);
-    localStorage.removeItem('pcosProfile');
-    localStorage.removeItem('foodAnalysisHistory');
-    console.log('UserProvider: Navigating to / after logout');
-    navigate('/');
-  }, [isAuthenticated, auth0Logout, navigate]);
+    console.log('UserProvider: logoutUser called. Initiating Auth0 logout.');
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  }, [auth0Logout]);
 
   useEffect(() => {
     if(profile.name || profile.completedQuiz) { 
       console.log('UserProvider: Persisting profile to localStorage:', profile);
       localStorage.setItem('pcosProfile', JSON.stringify(profile));
     }
-  }, [profile]);
+  }, [JSON.stringify(profile)]);
 
   // Now, the conditional return for isLoading is AFTER all hook calls.
   console.log('UserProvider: Auth0 state before isLoading check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);

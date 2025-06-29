@@ -54,10 +54,13 @@ const PCOSQuiz: React.FC = () => {
     symptoms: profile.symptoms || [],
     insulinResistant: profile.insulinResistant || null,
     dietaryPreferences: profile.dietaryPreferences || [],
+    hasBeenDiagnosed: profile.hasBeenDiagnosed || null,
+    height: profile.height || null,
+    weight: profile.weight || null,
   });
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
-  const nextStep = () => setActive((current) => (current < 5 ? current + 1 : current));
+  const nextStep = () => setActive((current) => (current < 6 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
   
   const handleValueChange = (field: keyof PCOSProfile, value: any) => {
@@ -166,6 +169,46 @@ const PCOSQuiz: React.FC = () => {
                 </Radio.Group>
               </Stack>
             </Stepper.Step>
+            <Stepper.Step label="Physical Health" description="Measurements">
+              <Stack gap="xl" p="md">
+                <Title order={4}>Physical Health</Title>
+                <Radio.Group
+                  name="hasBeenDiagnosed"
+                  label="Have you ever been officially diagnosed with PCOS by a doctor?"
+                  value={formData.hasBeenDiagnosed || ''}
+                  onChange={(value) => handleValueChange('hasBeenDiagnosed', value as 'yes' | 'no')}
+                >
+                  <Group mt="xs">
+                    <Radio value="yes" label="Yes" color="pink" />
+                    <Radio value="no" label="No" color="pink" />
+                  </Group>
+                </Radio.Group>
+                <Group grow>
+                  <NumberInput
+                    label="Height (feet)"
+                    value={formData.height?.feet || ''}
+                    onChange={(value) => handleValueChange('height', { ...formData.height, feet: value })}
+                    min={3}
+                    max={7}
+                  />
+                  <NumberInput
+                    label="Height (inches)"
+                    value={formData.height?.inches || ''}
+                    onChange={(value) => handleValueChange('height', { ...formData.height, inches: value })}
+                    min={0}
+                    max={11}
+                  />
+                </Group>
+                <NumberInput
+                  label="What is your current weight (in lbs)?"
+                  placeholder="Enter your weight"
+                  value={formData.weight || ''}
+                  onChange={(value) => handleValueChange('weight', value)}
+                  min={50}
+                  max={700}
+                />
+              </Stack>
+            </Stepper.Step>
             <Stepper.Step label="Lifestyle" description="Diet & Goals">
               <Stack gap="xl" p="md">
                 <Title order={4}>Lifestyle & Diet</Title>
@@ -239,17 +282,17 @@ const PCOSQuiz: React.FC = () => {
           </Stepper>
 
           <Group justify="flex-end" mt="xl">
-            {active > 0 && active < 5 && (
+            {active > 0 && active < 6 && (
               <Button variant="default" onClick={prevStep}>
                 Back
               </Button>
             )}
-            {active < 4 && (
+            {active < 5 && (
               <Button onClick={nextStep} color="pink" disabled={active === 0 && !disclaimerAccepted}>
                 Next
               </Button>
             )}
-            {active === 4 && (
+            {active === 5 && (
               <Button onClick={handleComplete} color="pink">
                 See My Results
               </Button>
