@@ -6,6 +6,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
 import { FireworksAIService } from '@/services/fireworksAI';
 import ExtendedPCOSQuiz from '@/pages/ExtendedPCOSQuiz';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const getFoodAnalysisResponse = (foodAnalysis: FoodAnalysisItem): string => {
   if (!foodAnalysis || !foodAnalysis.foodName) {
@@ -142,7 +144,12 @@ const ChatInterface: React.FC = () => {
                         }}
                     >
                         {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
-                        <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                        
+                        <Box className="markdown-content" style={{ whiteSpace: 'pre-wrap' }}>
+                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                           </ReactMarkdown>
+                        </Box>
                         
                         {message.id === messages[0].id && !profile.completedExtendedQuiz && !profile.skippedExtendedQuizPrompt && (
                           <Group mt="md">

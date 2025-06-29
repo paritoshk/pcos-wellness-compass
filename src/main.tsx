@@ -10,6 +10,7 @@ import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import { BrowserRouter, useNavigate } from 'react-router-dom'
 import { Center, Stack, Title, Text } from '@mantine/core'
+import './styles/markdown.css'
 
 console.log('main.tsx: Script start') // Early log
 
@@ -49,7 +50,7 @@ const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const appUrl = import.meta.env.VITE_VERCEL_URL
     ? `https://${import.meta.env.VITE_VERCEL_URL}`
-    : 'http://localhost:8080';
+    : window.location.origin;
 
   // This check is the important one for developers.
   if (!domain || !clientId) {
