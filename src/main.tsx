@@ -47,17 +47,22 @@ const Auth0ProviderWithRedirect: React.FC<{ children: React.ReactNode }> = ({ ch
     navigate(appState?.returnTo || window.location.pathname)
   }
 
-  // Use Vercel's system env var for preview URLs, otherwise default to localhost
   const appUrl = import.meta.env.VITE_VERCEL_URL
     ? `https://${import.meta.env.VITE_VERCEL_URL}`
     : 'http://localhost:8080'
 
+  // This check is the important one for developers.
   if (!domain || !clientId) {
     return (
       <Center h="100vh">
-        <Stack align="center">
-          <Title order={2} c="red">Configuration Error</Title>
-          <Text>Auth0 Domain or Client ID is missing from your .env file.</Text>
+        <Stack align="center" p="md">
+          <Title order={2} c="red.7">Configuration Error</Title>
+          <Text ta="center">
+            The Auth0 Domain or Client ID is not configured.
+          </Text>
+          <Text c="dimmed" size="sm" ta="center">
+            Please make sure `VITE_AUTH0_DOMAIN` and `VITE_AUTH0_CLIENT_ID` are set correctly in your `.env` file.
+          </Text>
         </Stack>
       </Center>
     )
