@@ -63,8 +63,20 @@ const PCOSQuiz: React.FC = () => {
   const nextStep = () => setActive((current) => (current < 6 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleValueChange = (field: keyof PCOSProfile, value: any) => {
     setFormData((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleHeightChange = (type: 'feet' | 'inches', value: string | number) => {
+    const numValue = typeof value === 'string' ? parseInt(value) || 0 : value;
+    setFormData((current) => ({ 
+      ...current, 
+      height: { 
+        feet: type === 'feet' ? numValue : current.height?.feet || 0,
+        inches: type === 'inches' ? numValue : current.height?.inches || 0
+      }
+    }));
   };
 
   const handleComplete = () => {
@@ -187,14 +199,14 @@ const PCOSQuiz: React.FC = () => {
                   <NumberInput
                     label="Height (feet)"
                     value={formData.height?.feet || ''}
-                    onChange={(value) => handleValueChange('height', { ...formData.height, feet: value })}
+                    onChange={(value) => handleHeightChange('feet', value)}
                     min={3}
                     max={7}
                   />
                   <NumberInput
                     label="Height (inches)"
                     value={formData.height?.inches || ''}
-                    onChange={(value) => handleValueChange('height', { ...formData.height, inches: value })}
+                    onChange={(value) => handleHeightChange('inches', value)}
                     min={0}
                     max={11}
                   />

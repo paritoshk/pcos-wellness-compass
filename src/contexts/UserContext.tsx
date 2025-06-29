@@ -19,6 +19,12 @@ export interface PCOSProfile {
     inches: number | null;
   };
   weight: number | null;
+  completedExtendedQuiz: boolean;
+  // AI-Engineered Features
+  PCOS_Phenotype?: 'Insulin-Resistant' | 'Inflammatory' | 'Adrenal' | 'Hidden-Cause' | null;
+  MetabolicRiskScore?: number | null; // e.g., 1-10
+  HormonalImbalanceIndicators?: string[];
+  PersonalizedFocusAreas?: string[];
 }
 
 export interface FoodAnalysisItem {
@@ -62,7 +68,12 @@ const defaultProfile: PCOSProfile = {
   completedQuiz: false,
   hasBeenDiagnosed: null,
   height: { feet: null, inches: null },
-  weight: null
+  weight: null,
+  completedExtendedQuiz: false,
+  PCOS_Phenotype: null,
+  MetabolicRiskScore: null,
+  HormonalImbalanceIndicators: [],
+  PersonalizedFocusAreas: [],
 };
 
 const UserContext = createContext<UserContextType>({

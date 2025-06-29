@@ -5,6 +5,7 @@ import { useUser, PCOSProfile, FoodAnalysisItem } from '@/contexts/UserContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ChatFoodAnalyzer from '@/components/ChatFoodAnalyzer';
 import { FireworksAIService } from '@/services/fireworksAI';
+import ExtendedPCOSQuiz from '@/pages/ExtendedPCOSQuiz';
 
 interface Message {
   id: string;
@@ -42,6 +43,7 @@ const ChatInterface: React.FC = () => {
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [analyzerOpened, setAnalyzerOpened] = useState(false);
+  const [extendedQuizOpened, setExtendedQuizOpened] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const fireworksAIService = useRef(new FireworksAIService()).current;
@@ -56,7 +58,7 @@ const ChatInterface: React.FC = () => {
       setMessages([{
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button.`,
+        content: `Hi ${profile.name}! I'm Nari, your PCOS Wellness assistant. How can I help you today? You can analyze your food by clicking the camera button, or take a more detailed quiz to personalize your experience.`,
         timestamp: new Date()
       }]);
     }
@@ -110,6 +112,11 @@ const ChatInterface: React.FC = () => {
         }} />
       </Modal>
 
+      {/* Placeholder for the new Extended Quiz Modal */}
+      <Modal opened={extendedQuizOpened} onClose={() => setExtendedQuizOpened(false)} title="Detailed Wellness Quiz" size="xl" centered>
+        <ExtendedPCOSQuiz onComplete={() => setExtendedQuizOpened(false)} />
+      </Modal>
+
       <Stack h="100%" gap="md">
         <Box>
             <Text component="h1" size="xl" fw={700}>Chat with Nari</Text>
@@ -125,6 +132,11 @@ const ChatInterface: React.FC = () => {
                         style={{ maxWidth: '90%', backgroundColor: message.role === 'user' ? 'var(--mantine-color-pink-6)' : 'white', color: message.role === 'user' ? 'white' : 'black' }}>
                           {message.foodAnalysis && <Text fw={500} mb="xs">Analysis of {message.foodAnalysis.foodName}</Text>}
                           <Text component="div" style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                          {message.id === messages.find(m => m.role === 'assistant')?.id && !profile.completedExtendedQuiz && (
+                            <Button mt="md" variant="light" color="pink" onClick={() => setExtendedQuizOpened(true) }>
+                              Take Detailed Wellness Quiz
+                            </Button>
+                          )}
                           <Text size="xs" mt={4} style={{ opacity: 0.7, textAlign: 'right' }}>{message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                       </Paper>
                   </Group>
