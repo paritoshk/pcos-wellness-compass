@@ -23,6 +23,7 @@ const ExtendedPCOSQuiz: React.FC<ExtendedPCOSQuizProps> = ({ onComplete }) => {
   const nextStep = () => setActive((current) => (current < 4 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleValueChange = (field: keyof PCOSProfile, value: any) => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
